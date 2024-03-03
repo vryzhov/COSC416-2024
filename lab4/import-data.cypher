@@ -11,31 +11,34 @@ WITH "https://raw.githubusercontent.com/vryzhov/COSC416-2024/main/lab4/" AS b
 LOAD CSV WITH HEADERS FROM uri AS row
 MERGE (g:Genre{name:row.genre})
 MERGE (m:Movie{movieId:toInteger(row.movieId)})
-  SET m.title = row.title
-MERGE (m) -[r:IN_GENRE] ->(g)
-RETURN count(*);
-
-
-WITH  "https://raw.githubusercontent.com/vryzhov/COSC416-2024/main/lab4/" AS base
-  WITH base + "movies-rated.csv" AS uri
-LOAD CSV WITH HEADERS FROM uri AS row
-MERGE (m:Movie{movieId:toInteger(row.movieId)})
-  SET  m += {budget: toInteger(row.budget), imdbRating: toFloat(row.imdbRating),
+  SET m += {budget: toInteger(row.budget), imdbRating: toFloat(row.imdbRating),
       title:row.title, runtime: toFloat(row.runtime), revenue: toInteger(row.revenue), imdbId: row.imdbId
   }
-  MERGE(u:User{name: row.userName})
-  MERGE (u)-[:RATED{rating:toFloat(row.userRating), timestamp:datetime({epochseconds:toInteger(row.ratingTimestamp)}) }] -> (m)
-  RETURN count(*);
+MERGE (m) -[r:IN_GENRE] ->(g)
+RETURN count(*);
+/// 20340
+
 
 
 
 WITH  "https://raw.githubusercontent.com/vryzhov/COSC416-2024/main/lab4/" AS base
-  WITH base + "movies-rated.csv" AS uri
+  WITH base + "movies-genre.csv" AS uri
 LOAD CSV WITH HEADERS FROM uri AS row
 WITH row.movieId as movieId, row.released as released 
  WHERE not released = ""
 MERGE (m:Movie{movieId:toInteger(movieId)})
   SET  m += {released: Date(released)}
- RETURN count(*); 
-  
+RETURN count(*); 
+/// 20158  
+ 
+
+WITH  "https://raw.githubusercontent.com/vryzhov/COSC416-2024/main/lab4/" AS base
+  WITH base + "movies-rated.csv" AS uri
+LOAD CSV WITH HEADERS FROM uri AS row
+MERGE (m:Movie{movieId:toInteger(row.movieId)})
+MERGE(u:User{name: row.userName})
+MERGE (u)-[:RATED{rating:toFloat(row.userRating), timestamp:datetime({epochseconds:toInteger(row.ratingTimestamp)}) }] -> (m)
+RETURN count(*);
+// 100004
+
   
