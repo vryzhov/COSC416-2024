@@ -8,11 +8,12 @@ Your goal for this up building a movie recommendation engine. In class, we studi
 
 ## Setup
 
-1. Create a new Neo4j RDBMS or use an existing one to create a new database.
+1. Create a new Neo4j DBMS or use an existing one to create a new database. 
+1. Make sure both *APOC* and *GDS* libraries are available in this DBMS.
 2. Import required data by running the following statements in Neo4j Browser. 
     - This code is saved in the file `import-data.cypher`. 
 
-```{cypher}
+```sql
 CREATE INDEX movie_title_idx IF NOT EXISTS FOR (n:Movie) ON (n.title);
 CREATE INDEX movie_movie_id_idx IF NOT EXISTS FOR (n:Movie) ON (n.movieId);
 CREATE INDEX movie_imdb_id_idx IF NOT EXISTS FOR (n:Movie) ON (n.imdbId);
