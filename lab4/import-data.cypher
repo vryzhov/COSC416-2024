@@ -1,9 +1,11 @@
 
-CREATE INDEX movie_title_idx FOR (n:Movie) ON (n.title);
-CREATE INDEX movie_movie_id_idx FOR (n:Movie) ON (n.movieId);
-CREATE INDEX movie_imdb_id_idx FOR (n:Movie) ON (n.imdbId);
-CREATE INDEX genre_name_idx FOR (n:Genre) ON (n.name);
+CREATE INDEX movie_title_idx IF NOT EXISTS FOR (n:Movie) ON (n.title);
+CREATE INDEX movie_movie_id_idx IF NOT EXISTS FOR (n:Movie) ON (n.movieId);
+CREATE INDEX movie_imdb_id_idx IF NOT EXISTS FOR (n:Movie) ON (n.imdbId);
+CREATE INDEX genre_name_idx IF NOT EXISTS FOR (n:Genre) ON (n.name);
+CREATE INDEX user_name_idx  IF NOT EXISTS FOR (n:User) ON (n.name);
 
+ 
 WITH "https://raw.githubusercontent.com/vryzhov/COSC416-2024/main/lab4/" AS base
   WITH base + "movies-genre.csv" AS uri
 LOAD CSV WITH HEADERS FROM uri AS row
