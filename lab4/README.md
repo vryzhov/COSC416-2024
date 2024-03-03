@@ -13,7 +13,7 @@ Your goal for this up building a movie recommendation engine. In class, we studi
 2. Import required data by running the following statements in Neo4j Browser. 
     - This code is saved in the file `import-data.cypher`. 
 
-```sql
+```sql 
 CREATE INDEX movie_title_idx IF NOT EXISTS FOR (n:Movie) ON (n.title);
 CREATE INDEX movie_movie_id_idx IF NOT EXISTS FOR (n:Movie) ON (n.movieId);
 CREATE INDEX movie_imdb_id_idx IF NOT EXISTS FOR (n:Movie) ON (n.imdbId);
@@ -21,7 +21,7 @@ CREATE INDEX genre_name_idx IF NOT EXISTS FOR (n:Genre) ON (n.name);
 CREATE INDEX user_name_idx  IF NOT EXISTS FOR (n:User) ON (n.name);
 
 // Import genres and movies
-WITH "https://raw.githubusercontent.com/vryzhov/COSC416-2024/main/lab4/" AS base
+WITH 'https://raw.githubusercontent.com/vryzhov/COSC416-2024/main/lab4/' AS base
   WITH base + "movies-genre.csv" AS uri
 LOAD CSV WITH HEADERS FROM uri AS row
 MERGE (g:Genre{name:row.genre})
@@ -34,7 +34,7 @@ MERGE (m) -[r:IN_GENRE] ->(g)
 RETURN count(*);  // 20340
 
 // Import released dates 
-WITH  "https://raw.githubusercontent.com/vryzhov/COSC416-2024/main/lab4/" AS base
+WITH  'https://raw.githubusercontent.com/vryzhov/COSC416-2024/main/lab4/' AS base
   WITH base + "movies-genre.csv" AS uri
 LOAD CSV WITH HEADERS FROM uri AS row
 WITH row.movieId as movieId, row.released as released 
@@ -44,7 +44,7 @@ MERGE (m:Movie{movieId:toInteger(movieId)})
 RETURN count(*);  // 20158  
  
 // Import user and ratings
-WITH  "https://raw.githubusercontent.com/vryzhov/COSC416-2024/main/lab4/" AS base
+WITH  'https://raw.githubusercontent.com/vryzhov/COSC416-2024/main/lab4/' AS base
   WITH base + "movies-rated.csv" AS uri
 LOAD CSV WITH HEADERS FROM uri AS row
 MERGE (m:Movie{movieId:toInteger(row.movieId)})
