@@ -117,9 +117,11 @@ Answer the following questions:
         |Sonatine (Sonachine)|	7.6|["Action", "Crime", "Drama", "Comedy"]
         
 9. Discuss limitations of this approach. 
-    * Is it scalable?    
-    * Will it work well on any other user? 
+    * Will it work well for any other user? 
     * When can it break altogether? 
+    * Should the bias introduced by the uneven representation of genres be compensated?
+        - If so, how the queries and result will change? 
+    * Other thoughts? 
 
 
 
