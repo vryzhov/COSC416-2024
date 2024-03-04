@@ -103,10 +103,10 @@ Answer the following questions:
 6. Create a tentative list of recommendations based on the user preferred genres    
     * _The genres I selected have enough movies for her to choose from_
 7. Use imdbRating data as a score to rank the recommended movies    
-    * _Rank by imdbRating for movies of chosen genres yields the list of candidates_ 
+    * _Ranking (Scoring) by imdbRating yields the list of candidates_ 
 8. Create "The Top 5 movies to watch" list    
     * _Use ORDER BY with LIMIT 5_    
-    * _The recommendations for Diana:_
+    * _Recommendations for Diana:_
 
         |Recommendation| 	Score | Genres |
         |:---------------|---------:|------ |
