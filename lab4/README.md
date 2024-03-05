@@ -1,4 +1,4 @@
-# Lab 4: Recommendation Engine
+# Lab 4: Recommendation Engines
 
 
 ## Introduction
@@ -125,36 +125,6 @@ Answer the following questions:
 
 
 
-<!--
-```sql
-match(u:User{name:"Diana Robles"}) -[r:RATED] -(m:Movie) -[:IN_GENRE] ->(g:Genre)
-call { match(m:Movie) -[:IN_GENRE] ->(gn:Genre) 
-      return gn.name as genre, count(m) as mvTotal 
-      }
-with mvTotal, genre, g.name as genre2, count(m) as mvWatched, 
-     avg(1.0*r.rating) as avgRating 
-where genre2 = genre
-return genre, mvTotal, mvWatched, 1.0*mvWatched/mvTotal as watchedProp,  avgRating,
-       1.0*mvWatched*avgRating/mvTotal as weight
-order by mvWatched desc
-
-// Recommendations
-match (diana:User{name:"Diana Robles"}) 
-match(m) -[r:IN_GENRE] - (:Genre{name:"Drama"})
-  where (m) -[:IN_GENRE] -> (:Genre{name:"Comedy"})
-   and  (m) -[:IN_GENRE] -> (:Genre{name:"Action"})
-   and not (m) <-[:RATED] - (diana)
-   and not m.imdbRating is null
-with m as rec
-match (rec) -[:IN_GENRE] -(g:Genre)
-return rec.title as Recommendation, 
-       rec.imdbRating as Score,
-       COLLECT(Distinct g.name) as Genres
- order by rec.imdbRating desc limit 5
-
-```
--->
-
 
 ### Part 2
 
@@ -191,44 +161,14 @@ With this plan in mind, you will answer the following questions for the user you
     * Similarly to the Part 1, the decisions we made are biased. Explain the nature of this bias. 
  
 
-<!-- 
-```
-
-// All movies average rating
-match (diana:User{name:"Diana Robles"}) -[r:RATED] -> (m:Movie) 
- return  min(r.rating), max(r.rating), round(avg(r.rating), 2)  as avg , count(m.title) as x
- order by avg desc
-
-// Genre specific average ratings
-match (diana:User{name:"Diana Robles"}) -[r:RATED] -> (m:Movie) -[:IN_GENRE] - (g:Genre)
- return g.name, min(r.rating), max(r.rating), round(avg(r.rating), 2)  as avg , count(m.title) as x
- order by avg desc
-
-// Recommendations
-match (diana:User{name:"Diana Robles"}) 
-match(m) -[r:IN_GENRE] - (:Genre{name:"Western"})
-  where (m) -[:IN_GENRE] -> (:Genre{name:"War"})
-   and not (m) <-[:RATED] - (diana)
-   and not m.imdbRating is null
-with m as rec
-match (rec) -[:IN_GENRE] -(g:Genre)
-return rec.title as Recommendation, 
-       rec.imdbRating as Score,
-       COLLECT(Distinct g.name) as Genres
- order by rec.imdbRating desc limit 5
-
-```
--->
-
 ### Part 3
 
 Answer the following questions.
 
 1. How do the recommendations obtained in Part 1 and Part 2 differ? 
-2. Explain the difference. 
-3. What approach would work better? Why?  
+2. Discuss possible reason for these differences. 
+3. What approach as explained in Part 1 and Part 2 would work better? Why?  
 5. Come up with a better way to create recommendations by combining both approaches. 
-
 
 
 
