@@ -93,15 +93,15 @@ Answer the following questions:
     * _Diana rated 250 movies_
 2. What movie genres did they prefer watching?     
     * _She watched over a hundred of Comedies and Dramas,_    
-    *  _Action, Crime and Thriller not too far behind_
-2. Explain your definition of preferred genres and justify your choice     
+    *  _Action, Crime and Thriller are not too far behind_
+2. Explain your decision for preferred genres and justify your choice     
     * _Action, Drama, Comedy, and Thriller are the most frequent genres in the data_    
-    * _This creates a bias for users to pick up movies of these categories_     
-    * _Significant presence of these genres in her watch list could be the result of this bias_
+    * _This imbalance creates a bias for users to pick up movies to watch_     
+    * _Significant presence of these genres in her watch list could be the result of the bias_
 5. What genres are the best candidates to create recommendations?     
     * _I have decided to use several genres_
 6. Create a tentative list of recommendations based on the user preferred genres    
-    * _The genres I selected have enough movies for her to choose from_
+    * _The selected genres have enough movies for her to choose from_
 7. Use imdbRating data as a score to rank the recommended movies    
     * _Ranking (Scoring) by imdbRating yields the list of candidates_ 
 8. Create "The Top 5 movies to watch" list    
@@ -117,10 +117,10 @@ Answer the following questions:
         |Sonatine (Sonachine)|	7.6|["Action", "Crime", "Drama", "Comedy"]
         
 9. Discuss limitations of this approach. 
-    * Will it work well for any other user? 
+    * Will it work well for other users? 
     * When can it break altogether? 
-    * Should the bias introduced by the uneven representation of genres be compensated?
-        - If so, how the queries and result will change? 
+    * How to compensate the bias caused by the uneven representation of genres in the database? 
+    * Should this bias be compensated?     
     * Other thoughts? 
 
 
@@ -158,16 +158,67 @@ return rec.title as Recommendation,
 
 ### Part 2
 
-For the same user, answer the following questions
+This part takes into account the user rating of movies. All 250 movies watched by Diana has her ratings ranging from _1.0_ to _5.0_ and stored as a property `rating` of `:RATED` relationship. These numbers make it possible to define her preferences for movie genres not based on the count of movies but on their ratings. We will compute average ratings for each genre and use these numbers to select best genres used for recommendations. 
+
+With this plan in mind, you will answer the following questions for the user you picked in Part 1
 
 1. What is the average rating of movies the user watched?
+    * _Average rating of all watched movies is 3.17_
 4. What is the average rating per genre? 
+    * _The highest average rating of 3.63 is reached for "Western"_    
+    * _The next three genres are "War" (3.43), "Sci-Fi" (3.3), and "Musical" (3.3)_.
 5. What genres are the best candidates for recommendations based on the movie ratings? 
-6. Create a tentative list of recommended movies based on the average scores
+    * _Based on these results, the best genres to use for recommendations are "Western" and "War"_
+6. Create a tentative list of recommended movies based on the average ratings
+    * _There are enough movies in these categories available for recommendations_
 7. Use imdbRating data as a score to rank the recommended movies
+    * _Using imdbRating as a ranking score leads to the list of top movies to recommend_
 8. Create "The Top 5 movies to watch" list
-9. Discuss limitations of this approach.
+    * _Use ORDER BY and LIMIT to create recommendations_
+    * _Recommendations for Diana according to the analysis of her movie ratings_
 
+        |Recommendation| 	Score | Genres |
+        |:---------------|---------:|------ |
+        |Shenandoah|	7.4 |	["War", "Western", "Drama"] 
+        |Legends of the Fall| 7.5| 	["War", "Drama", "Western", "Romance"]
+        |Two Mules for Sister Sara |	7.0	|["War", "Western", "Comedy"]
+        |Alamo, The |	6.9	|["Drama", "Western", "Action", "War"]
+        |Australia |	6.6	|["Adventure", "Western", "Drama", "War"]
+
+
+9. Discuss limitations of this approach.
+    * What can make this approach break or render it less reliable or accurate? 
+    * Similarly to the Part 1, the decisions we made are biased. Explain the nature of this bias. 
+ 
+
+<!-- 
+```
+
+// All movies average rating
+match (diana:User{name:"Diana Robles"}) -[r:RATED] -> (m:Movie) 
+ return  min(r.rating), max(r.rating), round(avg(r.rating), 2)  as avg , count(m.title) as x
+ order by avg desc
+
+// Genre specific average ratings
+match (diana:User{name:"Diana Robles"}) -[r:RATED] -> (m:Movie) -[:IN_GENRE] - (g:Genre)
+ return g.name, min(r.rating), max(r.rating), round(avg(r.rating), 2)  as avg , count(m.title) as x
+ order by avg desc
+
+// Recommendations
+match (diana:User{name:"Diana Robles"}) 
+match(m) -[r:IN_GENRE] - (:Genre{name:"Western"})
+  where (m) -[:IN_GENRE] -> (:Genre{name:"War"})
+   and not (m) <-[:RATED] - (diana)
+   and not m.imdbRating is null
+with m as rec
+match (rec) -[:IN_GENRE] -(g:Genre)
+return rec.title as Recommendation, 
+       rec.imdbRating as Score,
+       COLLECT(Distinct g.name) as Genres
+ order by rec.imdbRating desc limit 5
+
+```
+-->
 
 ### Part 3
 
@@ -175,16 +226,15 @@ Answer the following questions.
 
 1. How do the recommendations obtained in Part 1 and Part 2 differ? 
 2. Explain the difference. 
-3. Take a close look at the recommendations based on metrics used Part 1 and Part 2.      
-Which approach do you think would work better?  Explain your reasoning. 
-5. Would you like to change something in the logic based on the simple score ranking?  
-5. Can you come up with a better way to create recommendations by combining both approaches? 
-5.  
+3. What approach would work better? Why?  
+5. Come up with a better way to create recommendations by combining both approaches. 
 
 
 
 
 
+
+## Collaborative filtering
 
 
 
