@@ -1,4 +1,4 @@
-# Lab 4: Recommendation Engines
+# Lab 4: Recommendation Engines I. Content-based
 
 
 ## Introduction
