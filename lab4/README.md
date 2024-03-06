@@ -186,7 +186,7 @@ Answer the following questions.
 
 ### Submission
 
-Collect all your results - Cypher queries, solutions, thoughts, conjectures, etc. - into a document, <u>convert it to a PDF file</u> and submit before the deadline. 
+Collect all your results - Cypher queries, solutions, thoughts, conjectures, etc. - into a document, <u>**convert it to a PDF file**</u> and submit before the deadline. 
 
 
 ## Collaborative filtering
