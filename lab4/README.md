@@ -183,7 +183,7 @@ Answer the following questions.
 2. Discuss possible reasons for these differences. 
 3. What approach would work better in the real-life scenario? Why?  
 5. Come up with a better way to create recommendations by combining both methods. 
-6. Merge Cypher queries of Part 1 and Part 2 to create the final version of recommendations
+6. Merge Cypher queries of Part 1 and Part 2 to create the final list of recommendations
 
 
 
