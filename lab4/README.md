@@ -175,7 +175,7 @@ With this plan in mind, you will answer the following questions for the user you
 
 ### Part 3
 
-Now we have two versions of content-based recommendation methods. It's time to think about thier differences and applicability. 
+Now we have two versions of content-based recommendation methods. It's time to think about their differences and applicability. 
 
 Answer the following questions.
 
