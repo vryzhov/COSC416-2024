@@ -209,5 +209,8 @@ Answer the following questions.
 Collect all your results - Cypher queries, solutions, thoughts, conjectures, etc. - into a document, <u>**convert it to a PDF file**</u> and submit before the deadline. 
 
 
+### Content based recommendations
+
+See [Lab 4](https://github.com/vryzhov/COSC416-2024/tree/main/lab4)
 
 

@@ -194,7 +194,7 @@ Collect all your results - Cypher queries, solutions, thoughts, conjectures, etc
 ## Collaborative filtering
 
 
-Next time
+Next time, see [Lab 5](https://github.com/vryzhov/COSC416-2024/tree/main/lab5)
 
 
 
