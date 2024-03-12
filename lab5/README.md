@@ -56,7 +56,7 @@ order by jaccard desc limit 10
 ```
 -->
 
-There are at least three ways to define a peer for Diana. 
+There are at least two ways to define a peer for Diana. 
 
 * The simplest definition is based on the count of movies they both watched. If this set forms a big part of all Diana's movies, or even if it's equal to to all movies she watches, the peers with with large subset of commonly watched movies are good candidates to generate recommendations for Diana.
 
@@ -72,7 +72,7 @@ There are at least three ways to define a peer for Diana.
     |Karen Avila|1735|165|0.0907|
     |Darlene Garcia|2391|126|0.0501|
     |Thomas Swanson|1063|126|0.1061|
-    **Peers ranked by the pool size of common movies**
+    **Peers ranked by the pool size of common movies** 
 
 
     |Peer|peerRated|Common	|Jaccard|
@@ -82,7 +82,8 @@ There are at least three ways to define a peer for Diana.
     |Anita Matthews|196	|64|	0.1675| 
     |Thomas Avila|210|66	|0.1675|
     |Sierra Chandler|385|	90	|0.1651|
-    **Peers ranked by Jaccard index**
+    **Peers ranked by Jaccard index** 
+
 
 * A quick look at these numbers reveals the challenge. Angela Garcia watched 173 movies out of Diana's 250 movies, which is ~70% overlap of Daina's choices. But these 173 movies are just ~10% of all movies Angela decided to watch. 
 
@@ -115,7 +116,7 @@ Answer the following questions:
     |Decalogue, The (Dekalog)|	9.2	|1|
     |Pride and Prejudice|	9.1	|1|
     |Making a Murderer|	9.0	|1 | 
-     **Recommendations by Top 5 peers selected by common movies count**
+     **Recommendations of Top 5 peers selected by common movies count**
 
 
     |Recommendation	|Score	|Votes|
@@ -125,7 +126,7 @@ Answer the following questions:
     |Lord of the Rings: The Return of the King, The	|8.9	|5|
     Star Wars: Episode V - The Empire Strikes Back	|8.8	|3|
     |Fawlty Towers (1975|	8.8	|1|    
-     **Recommendations by Top 5 peers selected by Jaccard index**
+     **Recommendations of Top 5 peers selected by Jaccard index**
 
 
 
@@ -148,6 +149,7 @@ return  rec.title as Recommendation,
     * Will it work well for other users? 
     * Can it break down? What are the implicit conditions of its applicability? 
     * Other thoughts based on your understanding? 
+
 
 
 
