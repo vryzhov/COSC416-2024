@@ -1,6 +1,5 @@
 # Lab 5: Recommendation Engines II. Collaborative Filtering
 
-
 ## Introduction
 
 Your goal of this Lab is building a movie recommendation engine using collaborative filtering approach. 
@@ -40,49 +39,117 @@ Cypher queries, explanations of your thinking and reasoning, and the final recom
 
 Continue building recommendation for the same user who was chosen for Lab 4.
 
-I will demonstrate building recommendations for the same person who was used in lab 4. Her name is Diana Robles; she watched 250 movies.
+I will demonstrate the process for the same person who was used in lab 4. Her name is Diana Robles; she watched 250 movies.
 
 > **Note:** _You may want to attempt replicating my results first and use them as a starting point of your own investigation. The comments below are rather vague on purpose. Do not simply copy them; they are not sufficient for this lab assignment. Provide the **detailed outcome** your own work, thinking, and your own solutions to the recommendations problem._
 
+
 <!-- 
+```sql
+// Jaccard
+match(u:User{name:"Diana Robles"}) -[r:RATED] -(m:Movie) <-[rp:RATED] - (peer:User) 
+with u,peer,m
+CALL{with peer match (peer) -[:RATED] -> (om:Movie) return count(distinct om) as peerRated }
+with  peer, peerRated, count(distinct m) as common
+return peer, peerRated, common, 1.0*common /(250 + peerRated - common) as jaccard
+order by jaccard desc limit 10
+```
+-->
+
+There are at least three ways to define a peer for Diana. 
+
+* The simplest definition is based on the count of movies they both watched. If this set forms a big part of all Diana's movies, or even if it's equal to to all movies she watches, the peers with with large subset of commonly watched movies are good candidates to generate recommendations for Diana.
+
+*  The second is based on  Jaccard index. A user is called a peer if the Jaccard index of the movies they watched and movies watched by Diana is sufficiently high. It's not easy to come up with an universal definition of "sufficiently high," so let's define a peer as a users from the Top 10 ranked by Jaccard index. The reasoning behind using Jaccard index is the  possibility that the movies intersection comprises only a small part of movies the peer watched. In such a case, the peer may not be interested in the same type of movies as Diana. Jaccard similarity should help finding peers whose tastes are closer at the expense of smaller set of common movies.  
+
+*  The Cypher query that computes both size of the movie intersection and Jaccard index is rather straightforward. To get the top 10 peers, the results are sorted by either the intersection size, or by Jaccard index, depending and the peer definition. Both lists created for Diana are below.  
+
+    
+    |Peer	|peerRated|	Common	|Jaccard|
+    |:------|---------:|---------:|------:|
+    |Angela Garcia|1700	|173|0.0974|
+    |Angela Robertson|1610|	168	|0.9993|
+    |Karen Avila|1735|165|0.0907|
+    |Darlene Garcia|2391|126|0.0501|
+    |Thomas Swanson|1063|126|0.1061|
+    **Peers ranked by the pool size of common movies**
+
+
+    |Peer|peerRated|Common	|Jaccard|
+    |:------|---------:|---------:|------:|
+    |Michelle Robinson|	342	|97	|0.196 | 
+    |John Nelson|253|73|	0.1698| 
+    |Anita Matthews|196	|64|	0.1675| 
+    |Thomas Avila|210|66	|0.1675|
+    |Sierra Chandler|385|	90	|0.1651|
+    **Peers ranked by Jaccard index**
+
+* A quick look at these numbers reveals the challenge. Angela Garcia watched 173 movies out of Diana's 250 movies, which is ~70% overlap of Daina's choices. But these 173 movies are just ~10% of all movies Angela decided to watch. 
+
+* On the other hand, Michelle and Diana have 97 common movies, or 97/250 = 38% of all Diana's movies, but the Jaccard index is substantially higher, demonstrating a close match of movie preferences of Michelle and Diana. 
+
 Answer the following questions:
  
-1. What is his/her name and how many movies did he/she rated?    
-    * _Diana Robles rated 250 movies_
-2. What movie genres did she prefer watching?     
-    * _She watched over a hundred of Comedies and Dramas_    
-    *  _Movies of Action, Crime and Thriller genres are not too far behind_
-2. Explain your decision for preferred genres and justify your choice     
-    * _Action, Drama, Comedy, and Thriller are movies she seems to like watching_
-    * _They are also the most frequent genres in the data set_    
-    * _This imbalance creates a bias for users who can pick a movie to watch arbitrarily_     
-    * _A significant presence of these genres in her watch list could be the result of this bias_
-5. What genres are the best candidates to create recommendations?     
-    * _I have decided to use a few genres that seem to be a reasonable choice_
-6. Create a tentative list of recommendations based on the user preferred genres    
-    * _The selected genres have enough movies to create recommendations_
+1. List all the peers defined according to the ranking by the size of common movies pool and Jaccard index. 
+   
+2. What option for the peer selection seems preferable in your case? Explain your reasoning and your choice.  
+   
+5. Can we combine results of the Lab 4 (content-based recommendations) to improve the peers selection? Devise the metric to rank peers taking into consideration genre preferences and compute the result. How does the content-based recommendations affect your choice of peers? 
+ 
+ 6. Create a tentative list of recommendations based on your investigation. Explore the list further looking for opportunities to improve peer matching.  
+ 
 7. Use imdbRating data as a score to rank the recommended movies    
     * _Ranking (Scoring) by imdbRating yields the final list of candidates_ 
 8. Create "The Top 5 movies to watch" list    
     * _Use ORDER BY with LIMIT 5 to create recommendations_    
-    * _Recommendations for Diana:_
+    * _I decided to use both the size of common movies pool and Jaccard index to crete recommendations for Diana._
+    * _Here are the results with additional metric showing the number of peers (out of the top 5) who agreed on the recommendation (Votes column):_
+    * _In my case, two movies are present in both lists_
 
-        |Recommendation| 	Score | Genres |
-        |:---------------|---------:|------ |
-        |Knockin' on Heaven's Door|	8.0|["Comedy", "Crime", "Drama", "Action"]|
-        |Pek Yakında	|7.9|["Comedy", "Action", "Drama"]|
-        |Absolute Giganten |	7.8|["Action", "Comedy", "Romance", "Drama"]
-        |Lethal Weapon|	7.6|["Comedy", "Action", "Crime", "Drama"]
-        |Sonatine (Sonachine)|	7.6|["Action", "Crime", "Drama", "Comedy"]
-        
+
+
+    |Recommendation	|Score	|Votes|
+    |:------|---------:|------:|
+    |Band of Brothers|	9.6	|2|
+    |Shawshank Redemption, The|	9.3|	4|
+    |Decalogue, The (Dekalog)|	9.2	|1|
+    |Pride and Prejudice|	9.1	|1|
+    |Making a Murderer|	9.0	|1 | 
+     **Recommendations by Top 5 peers selected by common movies count**
+
+
+    |Recommendation	|Score	|Votes|
+    |:------|---------:|------:|
+    |Band of Brothers	|9.6	|1|
+    |Shawshank Redemption, The|	9.3	|4|
+    |Lord of the Rings: The Return of the King, The	|8.9	|5|
+    Star Wars: Episode V - The Empire Strikes Back	|8.8	|3|
+    |Fawlty Towers (1975|	8.8	|1|    
+     **Recommendations by Top 5 peers selected by Jaccard index**
+
+
+
+<!--
+match (diana:User{name:"Diana Robles"}) 
+match(peer:User) -[r:RATED] - (rec:Movie)
+where peer.name IN ["Michelle Robinson", "John Nelson", 'Anita Matthews',
+ 'Thomas Avila','Sierra Chandler'] 
+   and not (diana) -[:RATED] -> (rec)
+   and not rec.imdbRating is null
+return  rec.title as Recommendation, 
+       rec.imdbRating as Score, count(peer) as Votes
+ order by rec.imdbRating desc limit 5
+```sql
+-->
+
+8. Do you see the difference between these two sets of recommendations? Which one appears more consistent in your case? (Consistency could be understood as a measure of quality).
+
 9. Discuss limitations of this approach. 
     * Will it work well for other users? 
     * Can it break down? What are the implicit conditions of its applicability? 
-    * How to compensate the bias caused by the uneven representation of genres in the database? 
-    * Should this bias be compensated? Discuss pro and contra arguments. 
     * Other thoughts based on your understanding? 
 
---> 
+
 
 ### Part 2
 

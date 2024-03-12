@@ -3,12 +3,11 @@
 
 ## Introduction
 
-Your goal of this Lab is building a movie recommendation engine. In our classes, we studied two types of methods used for such engines -  one is the content-based, and the second is called collaborative filtering. You will build variations of these two engine types using.  The data set for this lab contains users and movies they watched. 
 
-This lab assumes your familiarity with the class material of Week 06. 
+The lab part of the course related to the recommendation engines (recommenders) consists of two sections. The first section is about the content-based recommendations (lab 4), and the second section is the direct application of collaborative filtering techniques. The second section will be the topic of the next week's lab (lab 5).
+You will build variations of these two engine types using Cypher. The data set to work contains users and movies they watched. 
 
-The lab consists of two sections. The first section is about the content-based recommendations, and the second section is the direct application of collaborative filtering techniques. The second section will be the topic of the next week's lab.
-
+Both labs assumes your familiarity with the class material of Week 06. 
 
 ## Setup
 
@@ -175,7 +174,7 @@ With this plan in mind, you will answer the following questions for the user you
 
 ### Part 3
 
-Now we have two versions of content-based recommendation methods. It's time to think about their differences and applicability. 
+Now we have two versions of content-based recommendation methods. It's time to think about thier differences and applicability. 
 
 Answer the following questions.
 
