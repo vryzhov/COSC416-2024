@@ -27,9 +27,7 @@ user and peers similarity metrics, and the peer ratings of the candidate movies.
 
 
 Today's assignment consists of three parts. 
-<!-- 
- In the first part, only information of watched (and rated) movies is available; in the second part we have access to the ratings assigned to movies that the user watched previously. These ratings are used to learn user preferences for movies of different genres. The third part is an attempt to combine results of the first and the second parts and create a more robust representation of user's preferences. As described earlier, the recommendations are created by selecting movies from the most preferred genre(s) under the condition that they have not yet been watched. The final recommendations are ranked by the `imdbRating` field that is used as score.  Only the top 5 movies are recommended to the user to watch.
--->
+
 
 Before starting this assignment, consult our in-class work on recommendation engines (Week 06), paying special attention to the second lecture of that week. Your submission must include
 Cypher queries, explanations of your thinking and reasoning, and the final recommendations for each of the three parts. Show all your work. Assuming of your results are correct (to some degree), thoroughness of explanations, diligence, and sound reasoning will be rewarded with extra marks. 
@@ -44,17 +42,7 @@ I will demonstrate the process for the same person who was used in lab 4. Her na
 > **Note:** _You may want to attempt replicating my results first and use them as a starting point of your own investigation. The comments below are rather vague on purpose. Do not simply copy them; they are not sufficient for this lab assignment. Provide the **detailed outcome** your own work, thinking, and your own solutions to the recommendations problem._
 
 
-<!-- 
-```sql
-// Jaccard
-match(u:User{name:"Diana Robles"}) -[r:RATED] -(m:Movie) <-[rp:RATED] - (peer:User) 
-with u,peer,m
-CALL{with peer match (peer) -[:RATED] -> (om:Movie) return count(distinct om) as peerRated }
-with  peer, peerRated, count(distinct m) as common
-return peer, peerRated, common, 1.0*common /(250 + peerRated - common) as jaccard
-order by jaccard desc limit 10
-```
--->
+
 
 There are at least two ways to define a peer for Diana. 
 
@@ -130,18 +118,7 @@ Answer the following questions:
 
 
 
-<!--
-    match (diana:User{name:"Diana Robles"}) 
-    match(peer:User) -[r:RATED] - (rec:Movie)
-    where peer.name IN ["Michelle Robinson", "John Nelson", 'Anita Matthews',
-    'Thomas Avila','Sierra Chandler'] 
-    and not (diana) -[:RATED] -> (rec)
-    and not rec.imdbRating is null
-    return  rec.title as Recommendation, 
-        rec.imdbRating as Score, count(peer) as Votes
-    order by rec.imdbRating desc limit 5
-```sql
--->
+
 
 8. Do you see the difference between the two sets of recommendations you created for your user? Which one appears more consistent in your case? (Consistency could be understood as a measure of quality).
 
@@ -186,26 +163,6 @@ This part takes into account movies ratings provided by peers. The ratings are s
 
 
 
-<!-- 
-
-```sql
-match(u:User{name:"Diana Robles"}) -[r:RATED] -(m:Movie) <-[rp:RATED] - (peer:User) 
-with u,peer,m,r,rp 
-with  u, peer, round(1/(1+avg(abs(r.rating-rp.rating))),4) as manhattan, count(distinct m) as common
-   , collect(r.rating) as r, collect(rp.rating) as rp
-with u, peer, manhattan, common, 
-  round(gds.similarity.cosine(r,rp),4) as cosine,
-  round(gds.similarity.pearson(r,rp),4) as pearson,
-  round(gds.similarity.euclidean(r,rp),4) as euclidean
-  where 1.0*common/250 > 0.2
-CALL{with peer match (peer) -[:RATED] -> (om:Movie) return count(distinct om) as peerRated }
-return peer.name as Peer , peerRated, common as Common, 
-round(1.0*common /(250 + peerRated - common),4) as Jaccard, manhattan, cosine,pearson,euclidean
-order by euclidean desc 
- limit 10
-```
-
--->
 
 
 * The list of recommendations based on this selection of peers (I am using 10 peers here) ranked by imdbRating is below. We can see some movies that were recommended earlier using different criteria of peer selection
@@ -227,27 +184,7 @@ order by euclidean desc
 
 
 
-<!--
 
-    match (diana:User{name:"Diana Robles"}) 
-    match(peer:User) -[r:RATED] - (rec:Movie)
-    where peer.name IN ["Kenneth Daniels"
-,"Melissa Howard"
-,"Kelsey White"
-,"Elizabeth Powell"	
-,"Amy Fischer"	
-,"John Swanson"	
-,"Michael Simmons"	
-,"Gabriel Davila"	
-,"Steven Rich"
-,"Jose Miller"] 
-    and not (diana) -[:RATED] -> (rec)
-    and not rec.imdbRating is null
-    return  rec.title as Recommendation, 
-        rec.imdbRating as Score, count(peer) as Votes
-    order by rec.imdbRating desc limit 10
-
---->
 
 
 Answer following questions. Similarly to the questions in Part 1, they are concerned with the logic of our analysis and meaning of obtained results.
