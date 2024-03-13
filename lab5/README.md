@@ -62,13 +62,13 @@ There are at least two ways to define a peer for Diana.
 
 *  The second is based on  Jaccard index. A user is called a peer if the Jaccard index of the movies they watched and movies watched by Diana is sufficiently high. It's not easy to come up with an universal definition of "sufficiently high," so let's define a peer as a users from the Top 10 ranked by Jaccard index. The reasoning behind using Jaccard index is the  possibility that the movies intersection comprises only a small part of movies the peer watched. In such a case, the peer may not be interested in the same type of movies as Diana. Jaccard similarity should help finding peers whose tastes are closer at the expense of smaller set of common movies.  
 
-*  The Cypher query that computes both size of the movie intersection and Jaccard index is rather straightforward. To get the top 10 peers, the results are sorted by either the intersection size, or by Jaccard index, depending and the peer definition. Both lists created for Diana are below.  
+*  The Cypher query that computes both the size of movies' intersection and Jaccard index is rather straightforward. To obtain the top 10 peers, the results are sorted by either the intersection size, or by Jaccard index, depending on the desired peer definition. Both lists created for Diana are below.  
 
     
     |Peer	|peerRated|	Common	|Jaccard|
     |:------|---------:|---------:|------:|
     |Angela Garcia|1700	|173|0.0974|
-    |Angela Robertson|1610|	168	|0.9993|
+    |Angela Robertson|1610|	168	|0.0993|
     |Karen Avila|1735|165|0.0907|
     |Darlene Garcia|2391|126|0.0501|
     |Thomas Swanson|1063|126|0.1061|
@@ -93,18 +93,18 @@ Answer the following questions:
  
 1. List all the peers defined according to the ranking by the size of common movies pool and Jaccard index. 
    
-2. What option for the peer selection seems preferable in your case? Explain your reasoning and your choice.  
+2. What option for the peer selection does seem preferable in your case? Explain your reasoning and your choice.  
    
-5. Can we combine results of the Lab 4 (content-based recommendations) to improve the peers selection? Devise the metric to rank peers taking into consideration genre preferences and compute the result. How does the content-based recommendations affect your choice of peers? 
+5. Can we combine results of the Lab 4 (content-based recommendations) to improve the peers selection? Devise the metric to rank peers by taking into consideration genre preferences and compute the result. How does the content-based recommendations affect your choice of peers? 
  
- 6. Create a tentative list of recommendations based on your investigation. Explore the list further looking for opportunities to improve peer matching.  
+ 6. Create a tentative list of recommendations based on your investigation. Explore the list further looking for opportunities to improve the peer matching.  
  
 7. Use imdbRating data as a score to rank the recommended movies    
     * _Ranking (Scoring) by imdbRating yields the final list of candidates_ 
 8. Create "The Top 5 movies to watch" list    
     * _Use ORDER BY with LIMIT 5 to create recommendations_    
     * _I decided to use both the size of common movies pool and Jaccard index to crete recommendations for Diana._
-    * _Here are the results with additional metric showing the number of peers (out of the top 5) who agreed on the recommendation (Votes column):_
+    * _The results below include an additional metric of the number of peers (out of the top 5) who agreed on the recommendation (Votes column):_
     * _In my case, two movies are present in both lists_
 
 
@@ -131,24 +131,24 @@ Answer the following questions:
 
 
 <!--
-match (diana:User{name:"Diana Robles"}) 
-match(peer:User) -[r:RATED] - (rec:Movie)
-where peer.name IN ["Michelle Robinson", "John Nelson", 'Anita Matthews',
- 'Thomas Avila','Sierra Chandler'] 
-   and not (diana) -[:RATED] -> (rec)
-   and not rec.imdbRating is null
-return  rec.title as Recommendation, 
-       rec.imdbRating as Score, count(peer) as Votes
- order by rec.imdbRating desc limit 5
+    match (diana:User{name:"Diana Robles"}) 
+    match(peer:User) -[r:RATED] - (rec:Movie)
+    where peer.name IN ["Michelle Robinson", "John Nelson", 'Anita Matthews',
+    'Thomas Avila','Sierra Chandler'] 
+    and not (diana) -[:RATED] -> (rec)
+    and not rec.imdbRating is null
+    return  rec.title as Recommendation, 
+        rec.imdbRating as Score, count(peer) as Votes
+    order by rec.imdbRating desc limit 5
 ```sql
 -->
 
-8. Do you see the difference between these two sets of recommendations? Which one appears more consistent in your case? (Consistency could be understood as a measure of quality).
+8. Do you see the difference between the two sets of recommendations you created for your user? Which one appears more consistent in your case? (Consistency could be understood as a measure of quality).
 
 9. Discuss limitations of this approach. 
     * Will it work well for other users? 
     * Can it break down? What are the implicit conditions of its applicability? 
-    * Other thoughts based on your understanding? 
+    * Other thoughts and ideas based on your understanding? 
 
 
 
@@ -156,56 +156,151 @@ return  rec.title as Recommendation,
 ### Part 2
 
 
-This part takes into account movies ratings provided by peers. The ratings are stored as a property `rating` of `:RATED` relationship. These numbers make it possible to select movies the peers rated above their average rating. They are presumable a good choice for Diana's recommendations. 
+This part takes into account movies ratings provided by peers. The ratings are stored as a property `rating` of `:RATED` relationship. These numbers make it possible to select peers based on the proximity of their ratings given to the movies watched by Diana. Users who rated movies similarly to Diana's ratings presumably have similar preferences and can offer better recommendations. 
 
-With this plan in mind, you will answer the following questions for the user's peers you chose in Part 1. 
+* It follows that the pool of potential peers is restricted to users who watched enough movies common with Diana. Two options present themselves immeditely - either users with the large common pool, or users with the high Jaccard index. 
 
-<!--
+* The second decision to make is the choice of metric to measure movie rating similarity. The options we looked at in the class are Euclidean distance, Manhattan distance, cosine and Person similarities. Their computations are facilitated by [corresponding functions](https://neo4j.com/docs/graph-data-science/current/algorithms/similarity-functions/) from GDS library. Manhattan similarity (or distance) is not implemented, but it is reasonable to use Euclidean metric instead. 
 
-1. What is the average rating of movies the user watched?
-    * _Average rating of all movies Diana watched is 3.17_
-4. What is the average rating per genre? 
-    * _The highest average rating of 3.63 is reached for "Western"_    
-    * _The next three genres are "War" (3.43), "Sci-Fi" (3.3), and "Musical" (3.3)_.
-5. What genres are the best candidates for recommendations based on the movie ratings? 
-    * _Based on these results, the best genres to use for recommendations are "Western" and "War"_
-6. Create a tentative list of recommended movies based on the average ratings
-    * _There are enough movies in these categories available for recommendations_
-7. Use `imdbRating` data as a score to rank the recommended movies
-    * _Using `imdbRating` as a ranking score leads to the list of top movies to recommend_
-8. Create "The Top 5 movies to watch" list
-    * _Use ORDER BY and LIMIT to create recommendations_
-    * _Recommendations for Diana according to the analysis of her movie ratings_
+* The third question to answer is which metric to sort by and use a score for selection of the top 5 peers. The result below shows top 5 peers closest to Diana based on the Euclidean similarity, but I might as well use any other metric. 
 
-        |Recommendation| 	Score | Genres |
-        |:---------------|---------:|------ |
-        |Shenandoah|	7.4 |	["War", "Western", "Drama"] 
-        |Legends of the Fall| 7.5| 	["War", "Drama", "Western", "Romance"]
-        |Two Mules for Sister Sara |	7.0	|["War", "Western", "Comedy"]
-        |Alamo, The |	6.9	|["Drama", "Western", "Action", "War"]
-        |Australia |	6.6	|["Adventure", "Western", "Drama", "War"]
+* The choice is not entirely arbitrary; there are some reasoning developed from understanding of data and the way these metrics relate to each other. In my case of Diana, the best Euclidean similarity of 1.0 (i.e. the Euclidean distance between the peer and Diana ratings is zero), which is  reached for three users. But each of them has only a single movie that Diana also watched. It means, we need to look at the data closer to make some compromises that hopefully will lead to sound decisions. 
+
+* Note that I use Euclidean similarity instead of Euclidean distance. Higher values of similarity correspond to lower values of the distance, thus my results are sorted by _euclidean_ in _descending_ order.
 
 
-9. Discuss limitations of this approach.
-    * What can make this approach break or render it less reliable or accurate? 
-    * Similarly to the Part 1, the decisions we made are biased. Explain the nature of this bias. Should we attempt to compensate for it? 
- 
---> 
-### Part 3
+
+    |Peer|peerRated|Common|Jaccard|manhattan|cosine|pearson|euclidean|
+    |:------|---------:|---------:|------:|------:|------:|------:|------:|
+    |Kenneth Daniels|319|52|0.1006|0.6341|0.977|0.2781|0.1544|
+    |Melissa Howard|223|58|0.1398|0.6105|0.9773|0.4054|0.1404|
+    |Kelsey White|307|59|0.1185|0.631|0.9777|0.5168|0.14|
+    |Elizabeth Powell|422|66|0.1089|0.614|0.982|0.1415|0.1354|
+    |Amy Fischer|315|55|0.1078|0.6111|0.9703|0.5401|0.1351|
+    |John Swanson|231|52|0.1212|0.5876|0.9674|-0.0547|0.1307|
+    |Michael Simmons|191|59|0.1545|0.596|0.9717|-0.0255|0.1297|
+    |Gabriel Davila|513|66|0.0947|0.6|0.9791|0.3629|0.1256|
+    |Steven Rich|341|52|0.0965|0.5746|0.9678|0.2851|0.1236|
+    |Jose Miller|203|52|0.1297|0.5417|0.9812|0.3808|0.1223|
+    **Peers ranked by Euclidean similarity** 
+
+
 
 <!-- 
-Now we have two versions of content-based recommendation methods. It's time to think about their differences and applicability. 
 
-Answer the following questions.
-
-1. How do the recommendations obtained in Part 1 and Part 2 differ? 
-2. Discuss possible reasons for these differences. 
-3. What approach would work better in the real-life scenario? Why?  
-5. Come up with a better way to create recommendations by combining both methods. 
-6. Merge Cypher queries of Part 1 and Part 2 to create the final list of recommendations
+```sql
+match(u:User{name:"Diana Robles"}) -[r:RATED] -(m:Movie) <-[rp:RATED] - (peer:User) 
+with u,peer,m,r,rp 
+with  u, peer, round(1/(1+avg(abs(r.rating-rp.rating))),4) as manhattan, count(distinct m) as common
+   , collect(r.rating) as r, collect(rp.rating) as rp
+with u, peer, manhattan, common, 
+  round(gds.similarity.cosine(r,rp),4) as cosine,
+  round(gds.similarity.pearson(r,rp),4) as pearson,
+  round(gds.similarity.euclidean(r,rp),4) as euclidean
+  where 1.0*common/250 > 0.2
+CALL{with peer match (peer) -[:RATED] -> (om:Movie) return count(distinct om) as peerRated }
+return peer.name as Peer , peerRated, common as Common, 
+round(1.0*common /(250 + peerRated - common),4) as Jaccard, manhattan, cosine,pearson,euclidean
+order by euclidean desc 
+ limit 10
+```
 
 -->
 
+
+* The list of recommendations based on this selection of peers (I am using 10 peers here) ranked by imdbRating is below. We can see some movies that were recommended earlier using different criteria of peer selection
+
+
+
+    |Recommendation|Score|Votes|
+    |:------|---------:|------:|
+    |Band of Brothers|9.6|1|
+    |Cosmos|9.3|2|
+    |Shawshank Redemption, The|9.3|7|
+    |Cowboy Bebop|9.0|1|
+    |Power of Nightmares, The: The Rise of the Politics of Fear|9.0|1|
+    |12 Angry Men|8.9|1|
+    |Lord of the Rings: The Return of the King, The|8.9|8|
+    |Star Wars: Episode V - The Empire Strikes Back|8.8|7|
+    |Star Wars: Episode IV - A New Hope|8.7|8|
+    |One Flew Over the Cuckoo's Nest|8.7|3
+
+
+
+<!--
+
+    match (diana:User{name:"Diana Robles"}) 
+    match(peer:User) -[r:RATED] - (rec:Movie)
+    where peer.name IN ["Kenneth Daniels"
+,"Melissa Howard"
+,"Kelsey White"
+,"Elizabeth Powell"	
+,"Amy Fischer"	
+,"John Swanson"	
+,"Michael Simmons"	
+,"Gabriel Davila"	
+,"Steven Rich"
+,"Jose Miller"] 
+    and not (diana) -[:RATED] -> (rec)
+    and not rec.imdbRating is null
+    return  rec.title as Recommendation, 
+        rec.imdbRating as Score, count(peer) as Votes
+    order by rec.imdbRating desc limit 10
+
+--->
+
+
+Answer following questions. Similarly to the questions in Part 1, they are concerned with the logic of our analysis and meaning of obtained results.
+
+
+
+2. What option for the peer selection does seem preferable in your case? Explain your reasoning and your choice.  
+   
+1. List top 10 peers defined according to the ranking by the metric you selected. You can create multiple lists, generate recommendations and then compare them. Do they offer the same movies? How many peers vote for each of them? 
+   
+ 6. Create a tentative list of recommendations based on your investigation. Explore the list further looking for opportunities to improve the peer matching.  
+ 
+7. Use imdbRating data as a score to rank the recommended movies    
+    * _Ranking (Scoring) by imdbRating yields the final list of candidates_ 
+8. Create "The Top 5 movies to watch" list    
+   
+
+
+### Part 3.
+
+
+* So far we have been using _imdbRating_ to score recommendations. This metric, however, is an aggregation of many IMDb users and it is likely to represent the "average" user. Since the goal of recommendations is in making them user-specific, _imdbRating_ is not the best choice for scoring. In this part of assignment, we will use  rankings of the peers to score recommendations for Diana. 
+
+
+* The peer query developed in Part 2 can be enhanced to pull _ranking_ attribute of _:RANK_ relationship for movies that Diana has not watched. A simple adjustment results in the following 10 recommendations. I have added the IMDb rating field for reference. 
+
+
+    |Recommendation|Score|IMDb|Votes|
+    |:------|---------:|------:|------:|
+    |Back to the Future Part II|5.0|7.8|1|
+    |Paperman|5.0|8.4|1|
+    |The Intern|5.0|7.2|1|
+    |Pitch Perfect|5.0|7.2|1|
+    |Notebook, The|5.0|7.9|1|
+    |Definitely, Maybe|5.0|7.2|1|
+    |The Martian|5.0|8.1|1|
+    |Cosmos|5.0|9.3|1|
+    |About Time|5.0|7.8|2|
+    |Prophet, A (Un Prophète)|5.0|7.9|1|
+    
+
+
+Create recommendations list for your user based on the peer ratings used as a score and answer the following questions. 
+
+1. What problems can you identify for this approach? 
+
+2. What can be done to make the user based scoring better? 
+
+3. Implement your improved solution and show the result
+
+3. How does it improve the "naive" approach I demonstrated? 
+
+2. Can you think of other ways to utilize information contained in the user-generated ratings? 
 ### Submission
 
 Collect all your results - Cypher queries, solutions, thoughts, conjectures, etc. - into a document, <u>**convert it to a PDF file**</u> and submit before the deadline. 
