@@ -269,10 +269,10 @@ Answer following questions. Similarly to the questions in Part 1, they are conce
 ### Part 3.
 
 
-* So far we have been using _imdbRating_ to score recommendations. This metric, however, is an aggregation of many IMDb users and it is likely to represent the "average" user. Since the goal of recommendations is in making them user-specific, _imdbRating_ is not the best choice for scoring. In this part of assignment, we will use  rankings of the peers to score recommendations for Diana. 
+* So far we have been using _imdbRating_ to score recommendations. This metric, however, is an aggregation of many IMDb users and it is likely to represent the "average" user. Since the goal of recommendations is in making them user-specific, _imdbRating_ is not the best choice for scoring. In this part of assignment, we will use movie ratings of peers to score recommendations for Diana. 
 
 
-* The peer query developed in Part 2 can be enhanced to pull _ranking_ attribute of _:RANK_ relationship for movies that Diana has not watched. A simple adjustment results in the following 10 recommendations. I have added the IMDb rating field for reference. 
+* The peer query developed in Part 2 can be enhanced to pull _rating_ attribute of _:RATED_ relationship for movies that Diana has not watched. A simple adjustment results in the following 10 recommendations. I have added the IMDb rating field for reference. 
 
 
     |Recommendation|Score|IMDb|Votes|
@@ -294,13 +294,14 @@ Create recommendations list for your user based on the peer ratings used as a sc
 
 1. What problems can you identify for this approach? 
 
-2. What can be done to make the user based scoring better? 
+2. What can be done to make the score based on peer rating better? 
 
 3. Implement your improved solution and show the result
 
-3. How does it improve the "naive" approach I demonstrated? 
+3. How does your new way of scoring improve the "naive" approach I demonstrated?  
 
 2. Can you think of other ways to utilize information contained in the user-generated ratings? 
+
 ### Submission
 
 Collect all your results - Cypher queries, solutions, thoughts, conjectures, etc. - into a document, <u>**convert it to a PDF file**</u> and submit before the deadline. 
