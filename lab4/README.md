@@ -145,11 +145,11 @@ With this plan in mind, you will answer the following questions for the user you
 
 1. What is the average rating of movies the user watched?
     * _Average rating of all movies Diana watched is 3.17_
-4. What is the average rating per genre? 
+4. What is the average rating of Diana per genre? 
     * _The highest average rating of 3.63 is reached for "Western"_    
     * _The next three genres are "War" (3.43), "Sci-Fi" (3.3), and "Musical" (3.3)_.
-5. What genres are the best candidates for recommendations based on the movie ratings? 
-    * _Based on these results, the best genres to use for recommendations are "Western" and "War"_
+5. What genres are the best to create recommendations for Diana based on her genre preferences? 
+    * _Based on these results, the best genres to use for recommendations are "Western" and "War" (because Diana's average ratings of movies in these genres (3.63 and 3.43)are higher than her average rating of all movies (3.17) )_
 6. Create a tentative list of recommended movies based on the average ratings
     * _There are enough movies in these categories available for recommendations_
 7. Use `imdbRating` data as a score to rank the recommended movies
