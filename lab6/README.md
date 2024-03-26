@@ -51,7 +51,7 @@ CALL gds.fastRP.mutate (
 
 ### Step 3. Identify top 5 peers using kNN node similarity algorithm
 
-The results of kNN algorithm will be written to the graph (not to the projection "Peer") in the form of new relationship "PEER" between "Users" with the property _score_ that indicate the strength of similarity between connected User nodes. This is a float number. I am going to use Top 5 peers. 
+The results of kNN algorithm will be written to the graph (not to the projection "Peer") in the form of new relationship "PEER" between "Users" with the property _score_ that indicate the strength of similarity between connected User nodes. This is a float number. I am going to use Top 5 peers. Note t
 
 
 ```sql
@@ -68,16 +68,46 @@ YIELD *;
 ### Step 4. Recommendations
 
 At this point, we are in the situation of collaborative filtering and can use 
-the same approach as we have in Lab 5. There are several variants to consider.
+the same approach as we have in Lab 5. 
+Note that
+the "similarity" relation is symmetric and I use  :PEER as a non-directional relationship. 
+By doing so, each node is attached to the higher number of peers under consideration (more than 5 in most cases)
+
+
+Here is an illustration of Diana'a peers. The relationships go from Diana to her 5 peers but there is also a relationship  from Stacy to Diana that goes in opposite direction. By ignoring directionality, Stacy will be considered Diana' peer as well
+
+```sql
+MATCH (diana:User where diana.name IN ["Diana Robles"]) 
+      -[p:PEER] -(o) 
+RETURN * 
+```
+<img title="Diana peers" alt="Diana" src="diana-5peers.png" width="400">
+
+
+Peers neighborhood of Diana and Stacy can be retrieved by the query 
+
+```sql
+MATCH (diana:User where diana.name IN ["Diana Robles", "Stacy Grant"]) 
+      -[p:PEER] -(o) return * 
+```
+
+<img title="Diana neighborhood" alt="Daina neighbors" 
+ src="diana-neighbors.png" width="400">
+
+
+Now we are ready to check recommendations these peers offer. 
+There are several options to consider.
+
+
 
 ##### Option 4.1. average peer ratings only
 
-Take all movies rated by the peers and rank them by peers' ratings.
+Take all movies rated by the peers and rank them by peers' ratings. 
 
 ```sql
 MATCH(diana:User{name:"Diana Robles"})
 CALL { WITH diana 
-      MATCH (diana)-[:PEER] ->(peer:User) - [rate:RATED] ->(m:Movie)
+      MATCH (diana)-[:PEER] - (peer:User) - [rate:RATED] ->(m:Movie)
       RETURN  m, rate, peer 
       ORDER BY  peer.score   DESC,  // peer similarity -- most similar peers first
                 rate.rating  DESC   // peer rating     -- then their ratings
@@ -101,9 +131,9 @@ The output:
 ├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
 │"Bourne Identity, The"                          │4.1       │5    │7.9       │
 ├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
-│"There Will Be Blood"                           │4.5       │4    │8.1       │
-├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
 │"Star Wars: Episode IV - A New Hope"            │3.6       │5    │8.7       │
+├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
+│"There Will Be Blood"                           │4.5       │4    │8.1       │
 ├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
 │"Silence of the Lambs, The"                     │4.5       │4    │8.6       │
 ├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
@@ -115,7 +145,7 @@ The output:
 ├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
 │"Kung Fu Panda"                                 │4.25      │4    │7.6       │
 ├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
-│"Lord of the Rings: The Return of the King, The"│4.25      │4    │8.9       │
+│"Collateral"                                    │4.25      │4    │7.6       │
 └────────────────────────────────────────────────┴──────────┴─────┴──────────┘
 </pre>
 
@@ -126,7 +156,7 @@ The output:
 MATCH(diana:User{name:"Diana Robles"}) -[r:RATED] -()
 WITH diana, AVG(r.rating) AS dianaAvgRating
 CALL { WITH diana, dianaAvgRating
-      MATCH (diana)-[:PEER] ->(peer:User) - [rate:RATED] ->(m:Movie)
+      MATCH (diana)-[:PEER] -(peer:User) - [rate:RATED] ->(m:Movie)
       WHERE rate.rating >  dianaAvgRating
       RETURN  m, rate, peer 
       ORDER BY  peer.score   DESC,  // peer similarity -- most similar peers first
@@ -178,7 +208,7 @@ This is a twist on Option 4.2. Only votes that are higher than Diana's genre lev
 MATCH(diana:User{name:"Diana Robles"}) -[r:RATED] -(m) -[:IN_GENRE] ->(genre:Genre)
 WITH diana, genre, AVG(r.rating) AS dianaAvgRating 
 CALL { WITH diana, dianaAvgRating,genre
-      MATCH (diana)-[:PEER] ->(peer:User) - [rate:RATED] ->(m:Movie) -[:IN_GENRE] ->(g:Genre)
+      MATCH (diana)-[:PEER] - (peer:User) - [rate:RATED] ->(m:Movie) -[:IN_GENRE] ->(g:Genre)
       WHERE 1.0*rate.rating/dianaAvgRating > 1.25 
         AND g = genre
       RETURN  m, rate, peer 
