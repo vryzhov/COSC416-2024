@@ -1,24 +1,24 @@
 # Lab 6: Recommendation Engines III. Recommendations quality
 
-## Introduction
+# Introduction
 
 Your goal of this Lab is tgh use of GDS algorithms for recommendations and subsequent 
 estimation of their relevance to the user of interest. 
 
 This lab assumes your familiarity with the class material. 
 
-## Setup
+# Setup
 
 
 This lab is based on the Movies database created for Labs 4 and 5
 
 
-## GDS
+# GDS
 
 
 The first part of the lab is concerned with the use of GDS algorithms `FastRP` and `kNN`.  Execute the queries below in sequence. Feel free to use _.estimate_   if there are concerns related to the CPU/Memory resources available
 
-### Step 1. Create GDS Projection
+## Step 1. Create GDS Projection
 
 Create native GDS projection "Peers" for nodes *Movie*, *User* and relationships *RATED*. Make relationships undirected and 
 
@@ -30,7 +30,7 @@ CALL gds.graph.project("Peers", 
 YIELD *
 ```
 
-### Step 2. Create embedding with FastRP 
+## Step 2. Create embedding with FastRP 
 
 Use FastRP embedding algorithm to project "Peers" to a subspace of lower dimension. The graph hs abo 10,000 nodes. I will use 64-dimensional embedding space. The rule of thumbs for selection of dimensionality _k_ is that _k_ << _ln(N)_ where _N_ is the number of data points and _ln()_ is natural logarithm. In our case, points are graph nodes, and _ln(10000)_ is about *10*, which is six time less than the dimension of embedding space. 
 
@@ -49,7 +49,7 @@ CALL gds.fastRP.mutate (
     }) YIELD *
 ```
 
-### Step 3. Identify top 5 peers using kNN node similarity algorithm
+## Step 3. Identify top 5 peers using kNN node similarity algorithm
 
 The results of kNN algorithm will be written to the graph (not to the projection "Peer") in the form of new relationship "PEER" between "Users" with the property _score_ that indicate the strength of similarity between connected User nodes. This is a float number. I am going to use Top 5 peers. Note t
 
@@ -65,7 +65,7 @@ YIELD *;
 // match(u) -[r:PEER] - (o) return * limit 20
 ```
 
-### Step 4. Recommendations
+## Step 4. Recommendations
 
 At this point, we are in the situation of collaborative filtering and can use 
 the same approach as we have in Lab 5. 
@@ -100,7 +100,7 @@ There are several options to consider.
 
 
 
-##### Option 4.1. average peer ratings only
+### Option 4.1. average peer ratings only
 
 Take all movies rated by the peers and rank them by peers' ratings. 
 
@@ -150,7 +150,7 @@ The output:
 </pre>
 
 
-##### Option 4.2. peers ratings that are above Diana's global average
+### Option 4.2. peers ratings that are above Diana's global average
 
 ```sql
 MATCH(diana:User{name:"Diana Robles"}) -[r:RATED] -()
@@ -200,7 +200,7 @@ The output is slightly different. "City of God (Cidade de Deus)" got moved to th
 
 </pre>
 
-##### Option 4.3. peers ratings that are above Diana's genre-level average
+### Option 4.3. peers ratings that are above Diana's genre-level average
 
 This is a twist on Option 4.2. Only votes that are higher than Diana's genre level average ratings are counted in. To make it more restrictive, I added the threshold "at least 25% higher" in another constraint for peer's movie selection
 
@@ -255,7 +255,7 @@ The output again is a bit different but count of votes is reduced.
 
 
 
-##### Option 4.4. Diana's preferred genres
+### Option 4.4. Diana's preferred genres
 
 Finally, restrict recommendations even more by only choosing movies from genres that with Diana's average rating higher than her global average rating. To make it more interesting, I added the list of genres that contributed to the selection of each movie for recommendations. This list is informative and also can be used for weighing the recommendations - the higher number of genres a movie has, the more likely Diana will watch it. 
 
