@@ -57,9 +57,11 @@ CALL gds.fastRP.mutate (
     }) YIELD *
 ```
 
-## Step 1.3. Identify top 5 peers using kNN node similarity algorithm
+## Step 1.3. Identify top  peers using kNN node similarity algorithm
 
-The results of kNN algorithm will be written to the graph (not to the projection "Peer") in the form of new relationship "PEER" between "Users" with the property _score_ that indicate the strength of similarity between connected User nodes. This is a float number. I am going to use Top 5 peers. Note t
+The results of kNN algorithm will be written to the graph (not to the projection "Peer") in the form of new relationship "PEER" between "Users" with the property _score_ that indicate the strength of similarity between connected User nodes. This is a float number. I am going to use the Top 5 peers.
+The low value of `topK` severely restricts the volume of peers considered eligible to give recommendations. With _250_ movies rated, her immediate neighborhood of peers who rated the same movies is _657_. The `topK` parameter could be safely increased to explore the recommendation algorithm performance for larger peers volume.
+
 
 
 ```sql
@@ -93,17 +95,17 @@ RETURN *
 ```
 <img title="Diana peers" alt="Diana" src="diana-5peers.png" width="400">
 
-Peers neighborhood of Diana and Stacy together can be retrieved by the query 
 
+Peers neighborhood of Diana and Stacy together can be retrieved by the query 
 ```sql
 MATCH (diana:User where diana.name IN ["Diana Robles", "Stacy Grant"]) 
       -[p:PEER] -(o) return * 
 ```
-
 <img title="Diana neighborhood" alt="Daina neighbors" 
  src="diana-neighbors.png" width="400">
 
 
+<!--
 A more complete query can be written using the count of hops modifier for `:PEER` relationship. Try to write it on your own. (Hint: `[:PEER*0..2]`). In my case, Diana's peers network is rather sparse. The degree of her node is _7_, and
 there are peers in her neighborhood with degree up to 5 times higher.
 (A good exercise is to reproduce queries to make the graph and table shown below)
@@ -128,7 +130,7 @@ there are peers in her neighborhood with degree up to 5 times higher.
 │"Anita Matthews" │29    │
 └─────────────────┴──────┘
 </pre>
-
+--> 
 
 Now we are ready to check recommendations which her peers offer. 
 There are four options to consider.
