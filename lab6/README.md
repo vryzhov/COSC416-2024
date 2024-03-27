@@ -109,8 +109,10 @@ there are peers in her neighborhood with degree up to 5 times higher.
 (A good exercise is to reproduce queries to make the graph and table shown below)
 
 
-<img title="Diana neighborhood" alt="Daina neighbors" 
- src="diana-net.png" width="700">
+<img title="Diana neighborhood" 
+ alt="Daina neighbors" 
+ src="diana-net2.png" width="700">
+ 
 <pre>
 ╒═════════════════╤══════╕
 │peer             │degree│
