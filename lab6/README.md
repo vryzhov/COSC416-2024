@@ -2,25 +2,22 @@
 
 # Introduction
 
-Your goal of this Lab is tgh use of GDS algorithms for recommendations and subsequent 
-estimation of their relevance to the user of interest. 
+Your goal of this Lab is the use of GDS algorithms for recommendations and subsequent 
+estimation of its performance for the user of interest. 
 
 This lab assumes your familiarity with the class material. 
 
 # Setup
 
-
 This lab is based on the Movies database created for Labs 4 and 5
-
 
 # Part 1. Peer similarity 
 
-
-The first part of the lab is concerned with the use of GDS algorithms `FastRP` and `kNN`.  Execute the queries below in sequence. Feel free to use _.estimate_   if there are concerns related to the CPU/Memory resources available
+The first part of the lab focuses on the GDS algorithms `FastRP` and `kNN`.  Execute the queries below. Feel free to use _.estimate_  if there are concerns related to the CPU/Memory resources.
 
 ## Step 1.1 Create GDS Projection
 
-Create native GDS projection "Peers" for nodes *Movie*, *User* and relationships *RATED*. Make relationships undirected and 
+Create native GDS projection "Peers" for nodes *Movie*, *User* and relationships *RATED*. Make relationships undirected. 
 
 ```sql
 CALL gds.graph.project("Peers", 
@@ -30,11 +27,11 @@ CALL gds.graph.project("Peers", 
 YIELD *
 ```
 
-## Step 1.2. Create embedding with FastRP 
+## Step 1.2. Create embedding with FastRP algorithm
 
-Use FastRP embedding algorithm to project "Peers" to a subspace of lower dimension. The graph hs abo 10,000 nodes. I will use 64-dimensional embedding space. The rule of thumbs for selection of dimensionality _k_ is that _k_ << _ln(N)_ where _N_ is the number of data points and _ln()_ is natural logarithm. In our case, points are graph nodes, and _ln(10000)_ is about *10*, which is six time less than the dimension of embedding space. 
+Use FastRP embedding algorithm to project "Peers" to a subspace of lower dimension. The graph has about 10,000 nodes. The rule of thumbs for selection of dimensionality _k_ is that _k_ << _ln(N)_ where _N_ is the number of data points and _ln()_ is natural logarithm. In our case, points are graph nodes. Given that _ln(10000)_ is about *10*, the dimension of embedding space can be chosen as _64_. (it's common to use powers of _2_ for _k_). 
 
-* The result  of the algorithm are written to the projected nodes (mutated) as 64-long lists of floats (vectors) stored as an attrubute _embedding_.  
+* The result  of the algorithm should be  written to the projected nodes (mutated) as 64-long lists of floats (vectors) stored in an attrubute _embedding_.  
 * The count of iterations is *4* (User->Movie->User-Movie) with
 weights _[0,1,1,1]_
 * Setting parameter *randomSeed* to a constant value guarantees replicability of the obtained results. 
@@ -43,9 +40,9 @@ weights _[0,1,1,1]_
 CALL gds.fastRP.mutate (
      "Peers", 
     { embeddingDimension:64, 
-      IterationWeights: [0.0,1.0,1.0,1.0], 
-      randomSeed:7474,
-      mutateProperty: "embedding"
+      IterationWeights: [0.0,1.0,1.0,1.0,1.0], 
+      randomSeed:7474, // for reproducibility 
+      mutateProperty: "embedding" // property name
     }) YIELD *
 ```
 
@@ -56,13 +53,17 @@ The results of kNN algorithm will be written to the graph (not to the projection
 
 ```sql
 CALL gds.knn.write("Peers", 
- { nodeLabels:["User"],  
- nodeProperties:"embedding", topK:5,
- writeRelationshipType: "PEER",
- writeProperty: "score"})
+     { nodeLabels:["User"],  
+     nodeProperties:"embedding", topK:5,
+     writeRelationshipType: "PEER",
+     writeProperty: "score", 
+     randomSeed: 42, 
+     sampleRate: 0.9, 
+     concurrency: 1
+     })
 YIELD *;
 // Check
-// match(u) -[r:PEER] - (o) return * limit 20
+// match(u) -[r:PEER] - (o) return * limit 50
 ```
 
 ## Step 1.4. Recommendations
@@ -83,7 +84,6 @@ RETURN *
 ```
 <img title="Diana peers" alt="Diana" src="diana-5peers.png" width="400">
 
-
 Peers neighborhood of Diana and Stacy can be retrieved by the query 
 
 ```sql
@@ -97,7 +97,6 @@ MATCH (diana:User where diana.name IN ["Diana Robles", "Stacy Grant"])
 
 Now we are ready to check recommendations these peers offer. 
 There are several options to consider.
-
 
 
 ### Option 1.4.1. average peer ratings only
@@ -127,25 +126,25 @@ The output:
 ╒════════════════════════════════════════════════╤══════════╤═════╤══════════╕
 │title                                           │peerRating│votes│imdbRating│
 ╞════════════════════════════════════════════════╪══════════╪═════╪══════════╡
+│"Bourne Identity, The"                          │3.92      │6    │7.9       │
+├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
 │"Shawshank Redemption, The"                     │4.6       │5    │9.3       │
 ├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
-│"Bourne Identity, The"                          │4.1       │5    │7.9       │
+│"Silence of the Lambs, The"                     │4.6       │5    │8.6       │
 ├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
-│"Star Wars: Episode IV - A New Hope"            │3.6       │5    │8.7       │
+│"Star Wars: Episode IV - A New Hope"            │3.83      │6    │8.7       │
 ├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
-│"There Will Be Blood"                           │4.5       │4    │8.1       │
+│"City of God (Cidade de Deus)"                  │4.5       │5    │8.7       │
 ├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
-│"Silence of the Lambs, The"                     │4.5       │4    │8.6       │
+│"Toy Story"                                     │4.5       │5    │8.3       │
 ├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
-│"City of God (Cidade de Deus)"                  │4.38      │4    │8.7       │
+│"Star Wars: Episode V - The Empire Strikes Back"│4.5       │5    │8.8       │
 ├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
-│"Star Wars: Episode V - The Empire Strikes Back"│4.38      │4    │8.8       │
+│"Lord of the Rings: The Return of the King, The"│4.3       │5    │8.9       │
 ├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
-│"Toy Story"                                     │4.38      │4    │8.3       │
+│"American Beauty"                               │4.2       │5    │8.4       │
 ├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
-│"Kung Fu Panda"                                 │4.25      │4    │7.6       │
-├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
-│"Collateral"                                    │4.25      │4    │7.6       │
+│"Collateral"                                    │4.0       │5    │7.6       │
 └────────────────────────────────────────────────┴──────────┴─────┴──────────┘
 </pre>
 
@@ -171,33 +170,32 @@ RETURN  m.title              AS title,  
 ORDER BY peerRating * votes DESC            // measure of film quality
 LIMIT 10
 ```
-The output is slightly different. "City of God (Cidade de Deus)" got moved to the bottom of the list
+The output is slightly different. However, all the usual suspects are there.
 
 <pre>
 ╒════════════════════════════════════════════════╤══════════╤═════╤══════════╕
 │title                                           │peerRating│votes│imdbRating│
 ╞════════════════════════════════════════════════╪══════════╪═════╪══════════╡
+│"Silence of the Lambs, The"                     │4.6       │5    │8.6       │
+├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
 │"Shawshank Redemption, The"                     │4.6       │5    │9.3       │
+├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
+│"Toy Story"                                     │4.5       │5    │8.3       │
+├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
+│"Star Wars: Episode V - The Empire Strikes Back"│4.5       │5    │8.8       │
+├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
+│"Lord of the Rings: The Return of the King, The"│4.3       │5    │8.9       │
+├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
+│"American Beauty"                               │4.2       │5    │8.4       │
 ├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
 │"Bourne Identity, The"                          │4.1       │5    │7.9       │
 ├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
-│"Silence of the Lambs, The"                     │4.5       │4    │8.6       │
+│"City of God (Cidade de Deus)"                  │4.88      │4    │8.7       │
 ├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
 │"There Will Be Blood"                           │4.5       │4    │8.1       │
 ├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
-│"Star Wars: Episode V - The Empire Strikes Back"│4.38      │4    │8.8       │
-├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
-│"Toy Story"                                     │4.38      │4    │8.3       │
-├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
-│"Lord of the Rings: The Return of the King, The"│4.25      │4    │8.9       │
-├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
-│"American Beauty"                               │4.25      │4    │8.4       │
-├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
-│"Terminator 2: Judgment Day"                    │4.13      │4    │8.5       │
-├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
-│"City of God (Cidade de Deus)"                  │4.83      │3    │8.7       │
+│"Casino"                                        │4.38      │4    │8.2       │
 └────────────────────────────────────────────────┴──────────┴─────┴──────────┘
-
 </pre>
 
 ### Option 1.4.3. peers ratings that are above Diana's genre-level average
@@ -225,31 +223,31 @@ ORDER BY peerRating * votes DESC            // measure of film quality
 LIMIT 10
 ```
 
-The output again is a bit different but count of votes is reduced.
+The output again is a bit different and the count of votes is somehow reduced.
 
 <pre>
 ╒════════════════════════════════════════════════╤══════════╤═════╤══════════╕
 │title                                           │peerRating│votes│imdbRating│
 ╞════════════════════════════════════════════════╪══════════╪═════╪══════════╡
-│"Silence of the Lambs, The"                     │4.7       │4    │8.6       │
+│"Silence of the Lambs, The"                     │4.77      │5    │8.6       │
 ├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
-│"American Beauty"                               │4.4       │4    │8.4       │
+│"Toy Story"                                     │4.5       │5    │8.3       │
 ├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
-│"Toy Story"                                     │4.38      │4    │8.3       │
+│"American Beauty"                               │4.33      │5    │8.4       │
+├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
+│"City of God (Cidade de Deus)"                  │4.88      │4    │8.7       │
+├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
+│"Star Wars: Episode V - The Empire Strikes Back"│4.82      │4    │8.8       │
+├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
+│"Lord of the Rings: The Return of the King, The"│4.53      │4    │8.9       │
+├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
+│"Kiss Kiss Bang Bang"                           │4.4       │4    │7.6       │
+├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
+│"Star Wars: Episode IV - A New Hope"            │4.33      │4    │8.7       │
 ├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
 │"Bourne Identity, The"                          │4.25      │4    │7.9       │
 ├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
 │"Terminator 2: Judgment Day"                    │4.2       │4    │8.5       │
-├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
-│"Shawshank Redemption, The"                     │5.0       │3    │9.3       │
-├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
-│"There Will Be Blood"                           │4.9       │3    │8.1       │
-├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
-│"City of God (Cidade de Deus)"                  │4.83      │3    │8.7       │
-├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
-│"Collateral"                                    │4.83      │3    │7.6       │
-├────────────────────────────────────────────────┼──────────┼─────┼──────────┤
-│"Star Wars: Episode V - The Empire Strikes Back"│4.75      │3    │8.8       │
 └────────────────────────────────────────────────┴──────────┴─────┴──────────┘
 </pre>
 
@@ -289,7 +287,7 @@ ORDER BY peerRating * votes DESC            // measure of film quality
 LIMIT 10
 ```
 
-The output below again is different. The last column with the list of genres may look confusing. However, "Toy Story" for example is listed under 
+The output below again is different. The last column with the list of genres may look surprising with "Toy Story" being an Adventure. However, "Toy Story" is listed under 
 "Children", "Animation", "Comedy", "Adventure", and "Fantasy." It's because Diana's average rating for "Adventure" (_3.1857_) is higher than her global average rating (_3.1511_), Toy Story appears in this list. 
 
 <pre>
@@ -306,17 +304,16 @@ The output below again is different. The last column with the list of genres may
 ├────────────────────────────────────────────────┼──────────┼─────┼──────────┼─────────────────────────────────────────┤
 │"There Will Be Blood"                           │4.9       │3    │8.1       │["Drama", "Western"]                     │
 ├────────────────────────────────────────────────┼──────────┼─────┼──────────┼─────────────────────────────────────────┤
-│"City of God (Cidade de Deus)"                  │4.83      │3    │8.7       │["Crime", "Drama", "Adventure", "Action"]│
-├────────────────────────────────────────────────┼──────────┼─────┼──────────┼─────────────────────────────────────────┤
 │"Silence of the Lambs, The"                     │4.83      │3    │8.6       │["Crime"]                                │
 ├────────────────────────────────────────────────┼──────────┼─────┼──────────┼─────────────────────────────────────────┤
 │"Collateral"                                    │4.83      │3    │7.6       │["Crime", "Drama", "Action"]             │
+├────────────────────────────────────────────────┼──────────┼─────┼──────────┼─────────────────────────────────────────┤
+│"City of God (Cidade de Deus)"                  │4.83      │3    │8.7       │["Crime", "Drama", "Adventure", "Action"]│
 ├────────────────────────────────────────────────┼──────────┼─────┼──────────┼─────────────────────────────────────────┤
 │"Star Wars: Episode V - The Empire Strikes Back"│4.75      │3    │8.8       │["Adventure", "Action", "Sci-Fi"]        │
 ├────────────────────────────────────────────────┼──────────┼─────┼──────────┼─────────────────────────────────────────┤
 │"Kung Fu Panda"                                 │4.67      │3    │7.6       │["Action", "IMAX"]                       │
 └────────────────────────────────────────────────┴──────────┴─────┴──────────┴─────────────────────────────────────────┘
-
 </pre>
 
 
@@ -354,7 +351,6 @@ SET m:Validation;   
 MATCH(u:User) -[r:RATED] -(m:Movie)
 WHERE  m.dataset is NULL OR m.dataset <> "Validation"
 SET m:Train;   
-    
 
 ```
 ## Step 2.2. Identify peers ignoring Diana's Validation set 
@@ -384,12 +380,16 @@ CALL gds.fastRP.mutate (
 Identify top 5 peers by kNN algorithm and write the *PEER_TRAIN* relationship with the _score_ attribute  back to the graph.
 
 ```sql
-CALL gds.knn.write('PeersTrain', 
- {nodeLabels:["User"],  
- nodeProperties:'embedding', topK:5,
- writeRelationshipType: "PEER_TRAIN",
- writeProperty: "score"})
-YIELD *
+CALL gds.knn.write("PeersTrain", 
+     { nodeLabels:["User"],  
+     nodeProperties:"embedding", topK:5,
+     writeRelationshipType: "PEER_TRAIN",
+     writeProperty: "score", 
+     randomSeed: 42, 
+     sampleRate: 0.5, 
+     concurrency: 1
+     })
+YIELD *;
 ```
 
 ## Step 2.3. Recommendations and Quality 
@@ -432,7 +432,7 @@ RETURN size(recommendation) AS sizeof_rec ,
 ╒══════════╤══════════╤══════════╤══════════╤══════════╤══════════╤══════════╕
 │sizeof_rec│sizeof_val│quality_10│quality_20│quality_30│quality_40│quality_50│
 ╞══════════╪══════════╪══════════╪══════════╪══════════╪══════════╪══════════╡
-│668       │54        │0.0161    │0.0139    │0.0247    │0.0333    │0.051     │
+│518       │54        │0.0161    │0.0429    │0.0375    │0.0449    │0.051     │
 └──────────┴──────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 </pre>
 
@@ -476,7 +476,7 @@ RETURN size(recommendation) AS sizeof_rec ,
 ╒══════════╤══════════╤══════════╤══════════╤══════════╤══════════╤══════════╕
 │sizeof_rec│sizeof_val│quality_10│quality_20│quality_30│quality_40│quality_50│
 ╞══════════╪══════════╪══════════╪══════════╪══════════╪══════════╪══════════╡
-│484       │54        │0.0161    │0.0139    │0.0375    │0.0568    │0.051     │
+│379       │54        │0.0161    │0.0429    │0.0375    │0.0449    │0.051     │
 └──────────┴──────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 </pre>
 
@@ -518,7 +518,7 @@ RETURN size(recommendation) AS sizeof_rec ,
 ╒══════════╤══════════╤══════════╤══════════╤══════════╤══════════╤══════════╕
 │sizeof_rec│sizeof_val│quality_10│quality_20│quality_30│quality_40│quality_50│
 ╞══════════╪══════════╪══════════╪══════════╪══════════╪══════════╪══════════╡
-│350       │54        │0.0       │0.0139    │0.0375    │0.0449    │0.0404    │
+│274       │54        │0.0161    │0.0282    │0.0247    │0.0333    │0.0404    │
 └──────────┴──────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 </pre>
 
@@ -570,7 +570,7 @@ RETURN size(recommendation) AS sizeof_rec ,
 ╒══════════╤══════════╤══════════╤══════════╤══════════╤══════════╤══════════╕
 │sizeof_rec│sizeof_val│quality_10│quality_20│quality_30│quality_40│quality_50│
 ╞══════════╪══════════╪══════════╪══════════╪══════════╪══════════╪══════════╡
-│275       │54        │0.0       │0.0139    │0.0375    │0.0449    │0.0404    │
+│219       │54        │0.0161    │0.0282    │0.0375    │0.0449    │0.0404    │
 └──────────┴──────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 </pre>
 
@@ -584,61 +584,75 @@ Option 1. average peer ratings only
 ╒══════════╤══════════╤══════════╤══════════╤══════════╤══════════╤══════════╕
 │sizeof_rec│sizeof_val│quality_10│quality_20│quality_30│quality_40│quality_50│
 ╞══════════╪══════════╪══════════╪══════════╪══════════╪══════════╪══════════╡
-│668       │54        │0.0161    │0.0139    │0.0247    │0.0333    │0.051     │
+│518       │54        │0.0161    │0.0429    │0.0375    │0.0449    │0.051     │
 └──────────┴──────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
 Option 2. peers ratings that are above Diana's global average
 ╒══════════╤══════════╤══════════╤══════════╤══════════╤══════════╤══════════╕
 │sizeof_rec│sizeof_val│quality_10│quality_20│quality_30│quality_40│quality_50│
 ╞══════════╪══════════╪══════════╪══════════╪══════════╪══════════╪══════════╡
-│484       │54        │0.0161    │0.0139    │0.0375    │0.0568    │0.051     │
+│379       │54        │0.0161    │0.0429    │0.0375    │0.0449    │0.051     │
 └──────────┴──────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
 Option 3. peers ratings that are above Diana's genre-level average
 ╒══════════╤══════════╤══════════╤══════════╤══════════╤══════════╤══════════╕
 │sizeof_rec│sizeof_val│quality_10│quality_20│quality_30│quality_40│quality_50│
 ╞══════════╪══════════╪══════════╪══════════╪══════════╪══════════╪══════════╡
-│350       │54        │0.0       │0.0139    │0.0375    │0.0449    │0.0404    │
+│274       │54        │0.0161    │0.0282    │0.0247    │0.0333    │0.0404    │
 └──────────┴──────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 
 Option 4. Diana's preferred genres
 ╒══════════╤══════════╤══════════╤══════════╤══════════╤══════════╤══════════╕
 │sizeof_rec│sizeof_val│quality_10│quality_20│quality_30│quality_40│quality_50│
 ╞══════════╪══════════╪══════════╪══════════╪══════════╪══════════╪══════════╡
-│275       │54        │0.0       │0.0139    │0.0375    │0.0449    │0.0404    │
+│219       │54        │0.0161    │0.0282    │0.0375    │0.0449    │0.0404    │
 └──────────┴──────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 </pre>
 
 
-The quality is measured by the highest Jaccard index reached by the lowest count of Top recommendations. Based on this definition, Option 2 is a winner reaching 0.0568 for Top 40 recommended movies. This result can be improved by making selection of recommended movies more conservative. Below is the table for the same query with `WHERE rate.rating >  dianaAvgRating` replaced by `WHERE rate.rating >  1.25*dianaAvgRating` (the average ragin of recommended movie must be at least 25% higher than Diana's overall raging average)
+The quality is measured by the highest Jaccard index reached by the lowest count of Top recommendations. Based on this definition, Options 1 and 2 are  winners reaching 0.0429 for Top 20 recommended movies. This result can be improved by making selection of recommended movies more conservative. Below is the table for the Option 2 query with `WHERE rate.rating >  dianaAvgRating` replaced by `WHERE rate.rating >  1.3*dianaAvgRating` (the average rating of recommended movie must be at least 30% higher than Diana's overall rating average)
 <pre>
 ╒══════════╤══════════╤══════════╤══════════╤══════════╤══════════╤══════════╕
 │sizeof_rec│sizeof_val│quality_10│quality_20│quality_30│quality_40│quality_50│
 ╞══════════╪══════════╪══════════╪══════════╪══════════╪══════════╪══════════╡
-│356       │54        │0.0       │0.0139    │0.0506    │0.0568    │0.051     │
+│167       │54        │0.0328    │0.0282    │0.0506    │0.0814    │0.0729    │
 └──────────┴──────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
 </pre>
 
-The top 30 movies reach the Jaccard index of _0.0506_ for this setup.
+The top 40 movies reach the Jaccard index of _0.0814_ for this setup.
 
 It appears that inclusion of genres into recommendation decisions has a negative effect on the quality. This could be attributed to a rather vague classification of movies by genre. 
 
+Note however, that these conclusions need to be verified. Algorithms we use are probabilistic, and if we ran them again, the results will be different. It's too unreliable to make decisions based only on a limited set of experiments. The findings must be thoroughly validated before production deployment. Also, Jaccard index in such a small range (0.08 max) is rather disappointing. Other recommendation methods should be explored.  
+
+Finally, there are many parameters to tweak. In the real life scenario, parameter optimization tasks are automated using various techniques. Most popular are random search, simple grid search, and Bayesian (hyper)parameter optimization.
 
 
 
+## Assignment Part 1
 
+Apply the approach outlined above to build the list of recommendations for the Person you are working with. 
 
+1. Use _FastRP_ and _kNN_ algorithms to create the list of peers. 
+2. Generate set of recommendations by the four methods described in the Part 1 of this lab.  
 
+## Assignment Part 2
+
+Evaluate quality of generated recommendations
+
+3. Create Validation set and evaluate each of the four methods using techniques presented in this lab.
+4. Apply at least two algorithms you developed in Lab 4 and Lab 5 (content based and collaborative filtering) to the Train set of movies and evaluate performance of these algorithms on the Validation set. The peer selection will be different than was used in Assignment Part 1.
+
+## Assignment Part 3
+5. Present evaluation results of algorithms performance in a table similar to shown above and create a summary of your findings. What methods yields better recommendation results? 
 
 ## Submission
 
 Collect all your results - Cypher queries, solutions, thoughts, conjectures, etc. - into a document, <u>**convert it to a PDF file**</u> and submit before the deadline. 
 
 
-### Content based and collaborative filtering recommendations
+See [Lab 4 (Content based)](https://github.com/vryzhov/COSC416-2024/tree/main/lab4)    
 
-See [Lab 4](https://github.com/vryzhov/COSC416-2024/tree/main/lab4)    
-
-See [Lab 5](https://github.com/vryzhov/COSC416-2024/tree/main/lab5)   
+See [Lab 5 (Collaborative Filtering)](https://github.com/vryzhov/COSC416-2024/tree/main/lab5)   
 
 
