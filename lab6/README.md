@@ -112,7 +112,7 @@ there are peers in her neighborhood with degree up to 5 times higher.
 <img title="Diana neighborhood" 
  alt="Daina neighbors" 
  src="diana-net2.png" width="700">
- 
+
 <pre>
 ╒═════════════════╤══════╕
 │peer             │degree│
@@ -134,7 +134,7 @@ Now we are ready to check recommendations which her peers offer.
 There are four options to consider.
 
 
-**NOTE:** _A metric to rank recommendations plays a crucial role for the recommendation quality. In the code below the product `peerRating * votes` is just one possible option chosen for demonstration. The next part of this lab is concerned with development of a better metric to rank the "Top N" recommendations._ 
+**NOTE:** _A metric to rank recommendations plays a crucial role for the recommendation quality. In the code below the product `peerRating * votes` is just one possible choice used for demonstration. Other options are various blends of `peerRating` ,  `votes` and `imdbRating`. It is also possible to tweak the topK parameter of kNN algorithm to obtain a more comprehensive sample of peers, rank peers differently or use only the tops subset of peers ranked according to some criteria. The next part of this lab is concerned with development of a better metric to rank the "Top N" recommendations._ 
 
 
 
@@ -421,7 +421,7 @@ Identify top 5 peers by kNN algorithm and write the *PEER_TRAIN* relationship wi
 ```sql
 CALL gds.knn.write("PeersTrain", 
      { nodeLabels:["User"],  
-     nodeProperties:"embedding", topK:5,
+     nodeProperties:"embedding", topK:50,
      writeRelationshipType: "PEER_TRAIN",
      writeProperty: "score", 
      randomSeed: 42,     
@@ -430,7 +430,7 @@ CALL gds.knn.write("PeersTrain", 
 YIELD *;
 ```
 
-## Step 2.3. Recommendations and Quality 
+## Step 2.3. Recommendations Quality 
 
 The recommendations quality will be measured by Jaccard index between the Validation set and the Top 10, 20, 30, 40, and 50 recommendations ordered by recommendation "score." Add more options if needed. The longer the recommendation list, the more movies will be found in the Validation set. If you took any of the Data Mining or Data Science classes, think about the balance between Precision and Recall. 
 
