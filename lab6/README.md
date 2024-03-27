@@ -360,22 +360,22 @@ First, create GDS projection that does not included Validation movies
 
 ```sql
 // Step 1: Create Projection for Peers identification
-CALL gds.graph.project("PeersTrain", 
-  ["Train", 'User'], 
+CALL gds.graph.project("PeersTrain", 
+  ["Train", 'User'], 
   {RATED:{orientation: "UNDIRECTED"}}
-) YIELD *;
+) YIELD *;
 ```
 
 Apply _fastRP_ and save the results in the PeersTrain projection
 
 ```sql
-CALL gds.fastRP.mutate (
-     'PeersTrain', 
-    { embeddingDimension:64, 
-      IterationWeights: [0.0,1.0,1.0,1.0], 
-      randomSeed:7474,     
-      mutateProperty: 'embedding'
-    }) YIELD *
+CALL gds.fastRP.mutate (
+     'PeersTrain', 
+    { embeddingDimension:64, 
+      IterationWeights: [0.0,1.0,1.0,1.0], 
+      randomSeed:7474,     
+      mutateProperty: 'embedding'
+    }) YIELD *
 ```
 Identify top 5 peers by kNN algorithm and write the *PEER_TRAIN* relationship with the _score_ attribute  back to the graph.
 
@@ -385,8 +385,7 @@ CALL gds.knn.write("PeersTrain", 
      nodeProperties:"embedding", topK:5,
      writeRelationshipType: "PEER_TRAIN",
      writeProperty: "score", 
-     randomSeed: 42, 
-     sampleRate: 0.5, 
+     randomSeed: 42,     
      concurrency: 1
      })
 YIELD *;
@@ -641,10 +640,11 @@ Apply the approach outlined above to build the list of recommendations for the P
 Evaluate quality of generated recommendations
 
 3. Create Validation set and evaluate each of the four methods using techniques presented in this lab.
-4. Apply at least two algorithms you developed in Lab 4 and Lab 5 (content based and collaborative filtering) to the Train set of movies and evaluate performance of these algorithms on the Validation set. The peer selection will be different than was used in Assignment Part 1.
+4. Apply at least two algorithms you developed in Lab 4 and Lab 5 (content based and collaborative filtering) to the Train set of movies and evaluate performance of these algorithms on the Validation set. Because the train set will be used to select peers, the list of peers will be different than the list used in Assignment Part 1.
 
 ## Assignment Part 3
-5. Present evaluation results of algorithms performance in a table similar to shown above and create a summary of your findings. What methods yields better recommendation results? 
+5. Present evaluation results of algorithms performance in a table similar to shown above and create a summary of your findings. Which methods yield better recommendation results? 
+6. Add your reflections and thoughts to the submission. 
 
 ## Submission
 
