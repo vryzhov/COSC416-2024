@@ -110,7 +110,7 @@ there are peers in her neighborhood with degree up to 5 times higher.
 
 
 <img title="Diana neighborhood" alt="Daina neighbors" 
- src="diana-net.png" width="500">
+ src="diana-net.png" width="700">
 <pre>
 ╒═════════════════╤══════╕
 │peer             │degree│
