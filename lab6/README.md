@@ -7,6 +7,9 @@ estimation of its performance for the user of interest.
 
 This lab assumes your familiarity with the class material. 
 
+
+_There are no precise instructions regarding content of the lab submission document. What you find below is just a guideline, not requirements. This lab is meant to be an experiment you conduct to explore movie recommendations options and uncover the best option available. Include information that you deem relevant to the task. Demonstrate your knowledge and ingenuity. The submission document should look like a preliminary lab report outlining your thinking and work-in-progress activities. Do not hesitate to provide more details and calculations that can help others understand what you do. For instance, in Part 2 you will  split the data into Train and Validation sets. Run a query making sure these subsets have expected counts of nodes. Explain your reasoning, include the query and its results into your submission._ 
+
 # Setup
 
 This lab is based on the Movies database created for Labs 4 and 5
@@ -26,6 +29,14 @@ CALL gds.graph.project("Peers", 
 )
 YIELD *
 ```
+To make sure the projection is created properly, execute the following query returning the list of GDS projections. Include the resulting table to your submission. 
+
+```sql 
+call gds.graph.list 
+      yield degreeDistribution, graphName, memoryUsage,
+      sizeInBytes, nodeCount, relationshipCount, 
+      density, schemaWithOrientation   
+```  
 
 ## Step 1.2. Create embedding with FastRP algorithm
 
@@ -70,12 +81,10 @@ YIELD *;
 
 At this point, we are in the situation of collaborative filtering and can use 
 the same approach as we have in Lab 5. 
-Note that
-the "similarity" relation is symmetric and I use  :PEER as a non-directional relationship. 
-By doing so, each node is attached to the higher number of peers under consideration (more than 5 in most cases)
+Note that the "similarity" relation is symmetric. In other words, `:PEER` as a non-directional relationship. It makes sense to ignore the direction to identify peers. It will make 
+each node attached to a higher number of peers (more than 5 in most cases) thereby considering a richer peer population to derive recommendations from. 
 
-
-Here is an illustration of Diana'a peers. The relationships go from Diana to her 5 peers but there is also a relationship  from Stacy to Diana that goes in opposite direction. By ignoring directionality, Stacy will be considered Diana' peer as well
+Here is an illustration of Diana'a peers. The relationships go from Diana to her 5 peers but there is also a `PEER` relationship from Stacy to Diana. It goes in the opposite direction. By ignoring directionality, Stacy will be considered Diana's sixth peer.
 
 ```sql
 MATCH (diana:User where diana.name IN ["Diana Robles"]) 
@@ -84,7 +93,7 @@ RETURN *
 ```
 <img title="Diana peers" alt="Diana" src="diana-5peers.png" width="400">
 
-Peers neighborhood of Diana and Stacy can be retrieved by the query 
+Peers neighborhood of Diana and Stacy together can be retrieved by the query 
 
 ```sql
 MATCH (diana:User where diana.name IN ["Diana Robles", "Stacy Grant"]) 
@@ -95,13 +104,42 @@ MATCH (diana:User where diana.name IN ["Diana Robles", "Stacy Grant"])
  src="diana-neighbors.png" width="400">
 
 
-Now we are ready to check recommendations these peers offer. 
-There are several options to consider.
+A more complete query can be written using the count of hops modifier for `:PEER` relationship. Try to write it on your own. (Hint: `[:PEER*0..2]`). In my case, Diana's peers network is rather sparse. The degree of her node is _7_, and
+there are peers in her neighborhood with degree up to 5 times higher.
+(A good exercise is to reproduce queries to make the graph and table shown below)
+
+
+<img title="Diana neighborhood" alt="Daina neighbors" 
+ src="diana-net.png" width="500">
+<pre>
+╒═════════════════╤══════╕
+│peer             │degree│
+╞═════════════════╪══════╡
+│"Tanya Mason"    │52    │
+├─────────────────┼──────┤
+│"Michael Simmons"│45    │
+├─────────────────┼──────┤
+│"Thomas Avila"   │38    │
+├─────────────────┼──────┤
+│"Melissa King"   │34    │
+├─────────────────┼──────┤
+│"Anita Matthews" │29    │
+└─────────────────┴──────┘
+</pre>
+
+
+Now we are ready to check recommendations which her peers offer. 
+There are four options to consider.
+
+
+**NOTE:** _A metric to rank recommendations plays a crucial role for the recommendation quality. In the code below the product `peerRating * votes` is just one possible option chosen for demonstration. The next part of this lab is concerned with development of a better metric to rank the "Top N" recommendations._ 
+
 
 
 ### Option 1.4.1. average peer ratings only
 
-Take all movies rated by the peers and rank them by peers' ratings. 
+Take all movies rated by the peers and rank them by the product of peers' ratings and
+count of votes. 
 
 ```sql
 MATCH(diana:User{name:"Diana Robles"})
@@ -255,7 +293,7 @@ The output again is a bit different and the count of votes is somehow reduced.
 
 ### Option 1.4.4. Diana's preferred genres
 
-Finally, restrict recommendations even more by only choosing movies from genres that with Diana's average rating higher than her global average rating. To make it more interesting, I added the list of genres that contributed to the selection of each movie for recommendations. This list is informative and also can be used for weighing the recommendations - the higher number of genres a movie has, the more likely Diana will watch it. 
+Finally, restrict recommendations even more by only choosing movies from genres with Diana's average rating higher than her global average rating. To make it more interesting, I added the list of genres that contributed to the selection of these movies for recommendations. This data is informative and also can be used for weighing recommendations - a higher number of genres the movie has, the more likely Diana will watch it (hm... probably... may be not). 
 
 
 ```sql
@@ -287,8 +325,8 @@ ORDER BY peerRating * votes DESC            // measure of film quality
 LIMIT 10
 ```
 
-The output below again is different. The last column with the list of genres may look surprising with "Toy Story" being an Adventure. However, "Toy Story" is listed under 
-"Children", "Animation", "Comedy", "Adventure", and "Fantasy." It's because Diana's average rating for "Adventure" (_3.1857_) is higher than her global average rating (_3.1511_), Toy Story appears in this list. 
+Again, the output is slightly different. The last column with the list of genres may look  a bit surprising with "Toy Story" being an Adventure. However, "Toy Story" is listed under 
+"Children", "Animation", "Comedy", "Adventure", and "Fantasy." It's because Diana's average rating for "Adventure" (_3.1857_) is higher than her global average rating (_3.1511_), Toy Story appears in this recommendation list. 
 
 <pre>
 ╒════════════════════════════════════════════════╤══════════╤═════╤══════════╤═════════════════════════════════════════╕
@@ -329,7 +367,6 @@ These movies cannot be used to identify her peers, but they will be included in 
 We will allocate 20% of Diana's movies for Validation. 
 
 It is possible to carve a Cypher query and use Cypher projection to build a GDS graph but it appears easier to just add labels to Movie nodes and create a Native projection instead.
-
 
 
 ```sql
@@ -393,7 +430,7 @@ YIELD *;
 
 ## Step 2.3. Recommendations and Quality 
 
-The recommendations quality will be measured by Jaccard index between the Validation set and the Top 10, 20, 30, and 50 recommendations ordered by recommendation "score." 
+The recommendations quality will be measured by Jaccard index between the Validation set and the Top 10, 20, 30, 40, and 50 recommendations ordered by recommendation "score." Add more options if needed. The longer the recommendation list, the more movies will be found in the Validation set. If you took any of the Data Mining or Data Science classes, think about the balance between Precision and Recall. 
 
 
 ### Option 1. average peer ratings only
@@ -628,27 +665,36 @@ Finally, there are many parameters to tweak. In the real life scenario, paramete
 
 
 
-## Assignment Part 1
+## Assignments 
+
+Include all your queries and intermediary results to the submission document. 
+
+### Part 1
 
 Apply the approach outlined above to build the list of recommendations for the Person you are working with. 
 
 1. Use _FastRP_ and _kNN_ algorithms to create the list of peers. 
 2. Generate set of recommendations by the four methods described in the Part 1 of this lab.  
+3. Include table with top 10 recommendations for each method
+    
 
-## Assignment Part 2
+### Part 2
 
 Evaluate quality of generated recommendations
 
-3. Create Validation set and evaluate each of the four methods using techniques presented in this lab.
-4. Apply at least two algorithms you developed in Lab 4 and Lab 5 (content based and collaborative filtering) to the Train set of movies and evaluate performance of these algorithms on the Validation set. Because the train set will be used to select peers, the list of peers will be different than the list used in Assignment Part 1.
+3. Create Train and Validation sets, write a query that compute the count of nodes in each set. Add the result to your submission. 
+5. Evaluate each of the four methods using techniques presented in this lab.
+3. Experiment and come up with a better metric to rank recommendations.
+4. Apply at least two algorithms you developed in Lab 4 and Lab 5 (content based and collaborative filtering) to the Train set and evaluate performance of these algorithms on the Validation set. Check the list of peers; it will be different than the peers used in Assignment Part 1.
 
-## Assignment Part 3
-5. Present evaluation results of algorithms performance in a table similar to shown above and create a summary of your findings. Which methods yield better recommendation results? 
-6. Add your reflections and thoughts to the submission. 
+
+### Part 3
+5. Present evaluation results of algorithms performance in a table similar to the one shown above and create a summary of your findings. Which methods yield better recommendation results? What is the best metric to rank recommendations? 
+6. Add your further reflections and thoughts to the lab submission. 
 
 ## Submission
 
-Collect all your results - Cypher queries, solutions, thoughts, conjectures, etc. - into a document, <u>**convert it to a PDF file**</u> and submit before the deadline. 
+Collect all your results - queries, code, thoughts, conjectures, etc. - into a document, <u>**convert it to a PDF file**</u> and submit before the deadline. 
 
 
 See [Lab 4 (Content based)](https://github.com/vryzhov/COSC416-2024/tree/main/lab4)    
