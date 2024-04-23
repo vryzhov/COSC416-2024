@@ -162,6 +162,26 @@ This part takes into account movies ratings provided by peers. The ratings are s
     **Peers ranked by Euclidean similarity** 
 
 
+Query to test
+
+```sql
+MATCH (user:User {name: "Larry Boyd"})-[r:RATED]->(m:Movie) <-[r2:RATED] -(peer:User)
+WITH user, peer, count(m) AS commonCount, collect(r.rating) as  userRatings, collect(r2.rating) as peerRatings, 
+     sum((r.rating - r2.rating)^2) as euclid_dist_term,
+     sum(abs(r.rating - r2.rating)) as manhat_dist_term 
+CALL {with user match (user) -[:RATED] -(m:Movie) with count(distinct m) as userRatedCount return userRatedCount}
+CALL {with peer match (peer) -[:RATED] -(m:Movie) with count(distinct m) as peerRatedCount return peerRatedCount}
+WITH user, peer, commonCount, userRatedCount, peerRatedCount,1.0*commonCount/(userRatedCount + peerRatedCount - commonCount) as jaccard, 
+    gds.similarity.pearson(userRatings, peerRatings) AS pearson_sim,
+    gds.similarity.cosine(userRatings, peerRatings) AS cosine_sim,
+    gds.similarity.euclidean(userRatings, peerRatings) AS euclidean_sim, 
+    1.0*sqrt(sum(euclid_dist_term))/commonCount as euclidean_dist,
+    1.0*sum(manhat_dist_term)/commonCount as manhattan_dist
+return user.name, peer.name,  commonCount, userRatedCount,peerRatedCount, 
+       jaccard, pearson_sim, cosine_sim, euclidean_sim, euclidean_dist, manhattan_dist
+order by jaccard desc limit 10
+```
+
 
 
 
@@ -183,7 +203,31 @@ This part takes into account movies ratings provided by peers. The ratings are s
     |One Flew Over the Cuckoo's Nest|8.7|3
 
 
+For recommendations: 
 
+```sql
+MATCH (user:User {name: "Leslie Brady"})-[r:RATED]->(m:Movie) <-[r2:RATED] -(peer:User)
+WITH user, peer, count(m) AS commonCount, collect(r.rating) as  userRatings, collect(r2.rating) as peerRatings, 
+     sum((r.rating - r2.rating)^2) as euclid_dist_term,
+     sum(abs(r.rating - r2.rating)) as manhat_dist_term 
+CALL {with user match (user) -[:RATED] -(m:Movie) with count(m) as userRatedCount return userRatedCount}
+CALL {with peer match (peer) -[:RATED] -(m:Movie) with count(m) as peerRatedCount return peerRatedCount}
+WITH user, peer, commonCount, userRatedCount, peerRatedCount,1.0*commonCount/(userRatedCount + peerRatedCount - commonCount) as jaccard, 
+    gds.similarity.pearson(userRatings, peerRatings) AS pearson_sim,
+    gds.similarity.cosine(userRatings, peerRatings) AS cosine_sim,
+    gds.similarity.euclidean(userRatings, peerRatings) AS euclidean_sim, 
+    1.0*sqrt(sum(euclid_dist_term))/commonCount as euclidean_dist,
+    1.0*sum(manhat_dist_term)/commonCount as manhattan_dist
+with user, peer,  commonCount, userRatedCount,peerRatedCount, 
+   jaccard, pearson_sim, cosine_sim, euclidean_sim, euclidean_dist, manhattan_dist
+order by jaccard desc limit 50 // parameter
+match(peer) -[r:RATED] -(rec:Movie)
+where not (user) -[:RATED] ->(rec) 
+return rec.title, rec.imdbRating, count(peer) as votes, avg(r.rating)  as avgPeerRating
+       order by avgPeerRating*votes desc
+limit 10 // recommendations count
+
+```
 
 
 
